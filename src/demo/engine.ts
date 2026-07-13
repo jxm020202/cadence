@@ -54,6 +54,7 @@ const FRI_28 = '2026-08-28';
 // Two prior NSFs 14 days apart, both at the same pay-cycle phase as today's
 // failure: enough history for the estimator to lock her fortnight.
 export const DANA_CONTEXT: PayerContext = {
+  payerId: PAYER_ID,
   amount: 45,
   day: 226,
   n_prior: 12,

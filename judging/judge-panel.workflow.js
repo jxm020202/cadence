@@ -7,9 +7,10 @@ export const meta = {
   ],
 }
 
-// args: { round: number, pitchFile: string }
-const round = (args && args.round) || 1
-const pitchFile = (args && args.pitchFile) || '/Users/davidberos/pinch-hackathon/pitch/pitch-v1.md'
+// args: { round: number, pitchFile: string } — may arrive JSON-stringified
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
+const round = A.round || 1
+const pitchFile = A.pitchFile || '/Users/davidberos/pinch-hackathon/pitch/pitch-v1.md'
 const REPO = '/Users/davidberos/pinch-hackathon'
 
 const COMPETITION = `

@@ -19,6 +19,7 @@ const ML_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'ml
 export const HARD_CODES = new Set(['account-closed', 'payment-stopped', 'blocked-by-bank', 'invalid-account']);
 
 export interface PayerContext {
+  payerId?: string;        // Pinch payer id — REQUIRED for the live act
   amount: number;          // dollars
   day: number;             // simulation/business day index of the failed debit
   n_prior: number;
@@ -108,16 +109,24 @@ export async function handleBankResults(
     const result: { paymentId: string; plan: RecoveryPlan; actedWith?: unknown } = { paymentId, plan };
 
     if (plan.gate === 'retry' && plan.bestRetryDay != null && opts.act) {
+      if (!ctx.payerId) {
+        // A live act without a payer id would 400 — refuse loudly, never guess.
+        console.error(`[loop] cannot act on ${paymentId}: context has no payerId`);
+        results.push(result);
+        continue;
+      }
       const retryDate = addDays(new Date(), plan.bestRetryDay);
       const body = {
-        payerId: undefined as unknown,   // filled from merchant records in production
+        payerId: ctx.payerId,
         amount: Math.round(ctx.amount * 100),
         transactionDate: retryDate.toISOString().slice(0, 10),
         description: 'Cadence recovery (model-timed)',
       };
       result.actedWith = body;
-      // THE ACT: the model's chosen date goes through Pinch's own mutation path.
-      await Pinch.savePayment(body as never);
+      // THE ACT: a NEW model-timed recovery payment via save-payment (create).
+      // Deliberate design: we never mutate the dishonoured payment's record —
+      // it stays in history as the failure; the recovery is its own object.
+      await Pinch.savePayment(body);
     }
     results.push(result);
   }

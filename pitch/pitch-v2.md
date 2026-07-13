@@ -8,7 +8,7 @@
 **[0:00 — cold open]** *(unchanged from v1)*
 Dana pays $15 a week for her gym, by direct debit. Last Tuesday it bounced — her balance dipped three days before payday. The biller charged her **$29.90 — twice her membership** — and the gym never noticed until she quit. Nobody chose any of this. The debit just landed on the wrong day.
 
-**[0:20 — problem]** *(unchanged)* ~2.9% of AU direct debits fail; >80% are just insufficient funds — money that exists, arriving days later. Gyms: 30–40% churn, a big slice involuntary. Late/failed payments: $1.1B/yr.
+**[0:20 — problem]** Direct debits fail ~2.9% of the time on GoCardless's 55,000-merchant book — the best published benchmark; AU-specific rates are exactly what our pilot back-test measures. **>80% are just insufficient funds** — money that exists, arriving days later. Gyms: 30–40% churn, a big slice involuntary. And the sticky number: **$29.90 — the incumbent's dishonour fee. The failure IS their revenue.** *(this number returns at the close)*
 
 **[0:45 — why Pinch + name Success+ first]** *(unchanged)* Success+ proves the mechanism (~70% recovery) — on GoCardless's rail, priced for enterprises, *after* the fee has landed. On Pinch the docs say: *"It's up to you to schedule a new payment when one fails."* Fiserv's decline ML is cards-only, US. **Nobody has this for AU BECS.**
 
