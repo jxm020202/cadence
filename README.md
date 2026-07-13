@@ -1,8 +1,35 @@
-# pinch-hackathon
+# Cadence
 
-Working **spine** for the [Pinch Me! I Want 50K](https://pinch-me-i-want-50k.devpost.com/) hackathon —
-the concept-agnostic plumbing every build needs, so we can bolt an idea on top instead of fighting auth.
+**ML dishonour prediction + payday-timed recovery on the Pinch Payments API** — built for the
+[Pinch Me! I Want 50K](https://pinch-me-i-want-50k.devpost.com/) hackathon.
 
+Pinch's own docs say *"It's up to you to schedule a new payment when one fails."* Cadence is that
+missing brain: a LightGBM model predicts P(dishonour) per scheduled BECS debit and — after a soft
+failure — picks the payer's likely-funded day and re-schedules the debit **through the Pinch API**
+(save-payment, Pinch's own designed-for mutation path). Default mode is the BECS-customary
+post-dishonour retry; pre-due-date re-timing only ships behind explicit payer opt-in.
+
+## ML results (disclosed-synthetic AU BECS ledger, held-out payers)
+| Retry strategy | Recovery rate | Recovered A$ (of $551k at risk) |
+|---|---|---|
+| Naive next-day | 14.5% | $66k |
+| Payday+2 heuristic (same estimator) | 38.0% | $177k |
+| **Cadence model** | **46.0%** | **$235k** |
+| Oracle ceiling | 84.0% | $454k |
+
+Risk model AUC 0.913 / PR-AUC 0.464 (base 0.030), Brier 0.0198. **Anti-leak ablation:** with the
+generator's interactions switched off the model scores AUC 0.501 and does *not* beat the heuristic —
+the lift is structural, not leakage. The pay-cycle is a hidden latent the model must reconstruct
+from timing (see `ml/outputs/payday_pdp.png`). Calibrated to published direct-debit benchmarks
+(~2.9% dishonour rate, >80% insufficient-funds, amount-banded rates) — labelled as UK GoCardless
+benchmark figures pending a real-ledger back-test. Synthetic proves the **method and harness**;
+the production number requires a back-test on a real BECS ledger.
+
+```bash
+cd ml && uv sync && uv run scripts/run_experiment.py   # --fast for a quick pass
+```
+
+## The Pinch API spine
 What's wired up (all verified against the live docs — see [`docs/pinch-api-reference.md`](docs/pinch-api-reference.md)):
 
 - **OAuth token auth** with in-memory caching (`src/pinch.ts`)
