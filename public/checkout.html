@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pinch CaptureJs demo</title>
+    <!-- Client-side card tokenisation. Sensitive PAN never touches our server. -->
+    <script
+      src="https://cdn.getpinch.com.au/capturejs/pinch.capture.v2.js"
+      integrity="sha384-hglYFSKC4AMA/rAQOGB3OiA8u5ri5F4qNMGgw4I+fggDSlTmPyREcj1J+VGnkAX8"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; }
+      input { display: block; width: 100%; padding: 10px; margin: 6px 0 14px; box-sizing: border-box; }
+      button { padding: 12px 20px; font-size: 16px; cursor: pointer; }
+      pre { background: #f4f4f4; padding: 12px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Charge $10.00 (test)</h1>
+    <input id="cardHolderName" placeholder="Name on card" value="Jane Test" />
+    <input id="cardNumber" placeholder="Card number" value="4242424242424242" />
+    <input id="expiryMonth" placeholder="MM" value="12" />
+    <input id="expiryYear" placeholder="YYYY" value="2030" />
+    <input id="cvc" placeholder="CVC" value="123" />
+    <button id="pay">Pay $10.00</button>
+    <pre id="out"></pre>
+
+    <script>
+      // Publishable key is injected server-side in a real app; hard-code the
+      // pk_test_ key here for the demo, or fetch it from a /config endpoint.
+      const capture = Pinch.Capture({ publishableKey: 'REPLACE_WITH_pk_test_KEY' });
+      const out = (o) => (document.getElementById('out').textContent = JSON.stringify(o, null, 2));
+
+      document.getElementById('pay').addEventListener('click', async () => {
+        try {
+          const { token } = await capture.createToken({
+            sourceType: 'credit-card',
+            cardNumber: cardNumber.value,
+            expiryMonth: expiryMonth.value,
+            expiryYear: expiryYear.value,
+            cvc: cvc.value,
+            cardHolderName: cardHolderName.value,
+          });
+          const res = await fetch('/api/charge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, amount: 1000, description: 'CaptureJs demo' }),
+          });
+          out(await res.json());
+        } catch (e) {
+          out({ error: String(e) });
+        }
+      });
+    </script>
+  </body>
+</html>
