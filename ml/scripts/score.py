@@ -98,11 +98,21 @@ def main():
              for d in range(1, RETRY_HORIZON + 1)}
     best = max(retry, key=retry.get)
 
-    print(json.dumps({
+    out = {
         "p_dishonour": round(p_now, 4),
         "best_retry_day": best,
         "retry_scores": {str(k): round(v, 4) for k, v in retry.items()},
-    }))
+    }
+
+    # sweep mode: risk at every candidate scheduling date around the debit —
+    # the "drag the debit" demo beat (the model as a touchable object)
+    if req.get("sweep"):
+        out["p_by_offset"] = {
+            str(off): round(predict(features_for(req, req["day"] + off)), 4)
+            for off in range(-7, 15)
+        }
+
+    print(json.dumps(out))
 
 
 if __name__ == "__main__":

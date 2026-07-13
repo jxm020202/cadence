@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Pinch } from './pinch.js';
 import { verifyPinchSignature } from './webhook.js';
-import { demo } from './demo/engine.js';
-import { handleBankResults, type PayerContext } from './loop.js';
+import { demo, DANA_CONTEXT } from './demo/engine.js';
+import { handleBankResults, sweepRisk, type PayerContext } from './loop.js';
 
 // payment-id → payer billing context (in-memory for demo; merchant DB in prod)
 const paymentContexts = new Map<string, PayerContext>();
@@ -91,6 +91,17 @@ app.get('/api/demo/state', async (_req, res) => res.json(await demo.state()));
 app.post('/api/demo/step', async (_req, res) => res.json(await demo.advance()));
 app.post('/api/demo/reset', async (_req, res) => res.json(await demo.reset()));
 demo.warm().then(() => console.log('[demo] model bridge warm')).catch((e) => console.warn('[demo] warm failed:', e));
+
+// the "drag the debit" spectacle beat: model risk at every candidate date
+let sweepCache: Record<string, number> | null = null;
+app.get('/api/demo/sweep', async (_req, res) => {
+  try {
+    sweepCache ??= await sweepRisk(DANA_CONTEXT);
+    res.json({ base_date: '2026-08-14', p_by_offset: sweepCache });
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
+  }
+});
 
 app.get('/thanks', (req, res) => {
   res.send(

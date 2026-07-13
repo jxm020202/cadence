@@ -47,6 +47,10 @@
   .call .hdr { color: var(--amber); }
   .call pre { color: var(--dim); white-space: pre-wrap; word-break: break-word; margin-top: 4px; }
   .mocktag { color: var(--amber); font-size: 10px; letter-spacing: 1px; }
+  .sweep { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-top: 14px; background: var(--bg); }
+  .sweep-head { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .sweep-tag { color: var(--green); border: 1px solid var(--green); border-radius: 20px; padding: 1px 8px; font-size: 10px; margin-left: 8px; }
+  .sweep-read { font-size: 14px; margin-top: 4px; color: var(--text); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -65,6 +69,12 @@
       <div class="narration" id="narration"></div>
       <div class="timeline" id="timeline"></div>
       <div class="sms" id="sms"></div>
+      <div class="sweep" id="sweep" style="display:none">
+        <div class="sweep-head">Drag the debit — every date has a price <span class="sweep-tag">live model</span></div>
+        <svg id="sweepSvg" viewBox="0 0 440 90" width="100%" height="90"></svg>
+        <input type="range" id="sweepSlider" min="-7" max="14" value="0" step="1" style="width:100%" />
+        <div class="sweep-read" id="sweepRead"></div>
+      </div>
       <div class="controls">
         <button class="primary" id="next">Run to bank date ▸</button>
         <button id="reset">Reset</button>
@@ -140,6 +150,35 @@
   nextBtn.addEventListener('click', async () => render(await api('/api/demo/step', 'POST')));
   document.getElementById('reset').addEventListener('click', async () => render(await api('/api/demo/reset', 'POST')));
   api('/api/demo/state').then(render);
+
+  // --- the spectacle beat: drag the debit, the model re-prices every date ---
+  let sweep = null;
+  const fmtDate = (base, off) => { const d = new Date(base); d.setDate(d.getDate() + off); return d.toISOString().slice(5, 10); };
+  function drawSweep(sel) {
+    const svg = document.getElementById('sweepSvg');
+    const offs = Object.keys(sweep.p_by_offset).map(Number).sort((a, b) => a - b);
+    const W = 440, H = 90, pad = 6;
+    const x = (o) => pad + ((o - offs[0]) / (offs.at(-1) - offs[0])) * (W - 2 * pad);
+    const pmax = Math.max(...Object.values(sweep.p_by_offset)) || 1;
+    const y = (p) => H - pad - (p / pmax) * (H - 2 * pad);
+    const pts = offs.map((o) => `${x(o)},${y(sweep.p_by_offset[o])}`).join(' ');
+    const p = sweep.p_by_offset[sel];
+    const color = p > 0.35 ? 'var(--red)' : p > 0.15 ? 'var(--amber)' : 'var(--green)';
+    svg.innerHTML = `
+      <polyline points="${pts}" fill="none" stroke="#58a6ff" stroke-width="2" opacity="0.85"/>
+      <line x1="${x(0)}" y1="${pad}" x2="${x(0)}" y2="${H - pad}" stroke="#30363d" stroke-dasharray="3,3"/>
+      <circle cx="${x(sel)}" cy="${y(p)}" r="6" fill="${color}"/>`;
+    document.getElementById('sweepRead').innerHTML =
+      `${fmtDate(sweep.base_date, sel)} (${sel >= 0 ? '+' : ''}${sel}d) — dishonour risk <b style="color:${color}">${(p * 100).toFixed(0)}%</b>`;
+  }
+  const slider = document.getElementById('sweepSlider');
+  slider.addEventListener('input', () => drawSweep(Number(slider.value)));
+  fetch('/api/demo/sweep').then((r) => r.json()).then((s) => {
+    if (!s.p_by_offset) return;
+    sweep = s;
+    document.getElementById('sweep').style.display = 'block';
+    drawSweep(0);
+  }).catch(() => {});
 </script>
 </body>
 </html>

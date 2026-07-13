@@ -53,7 +53,7 @@ const FRI_28 = '2026-08-28';
 // Dana's billing context — the SAME shape the live webhook loop consumes.
 // Two prior NSFs 14 days apart, both at the same pay-cycle phase as today's
 // failure: enough history for the estimator to lock her fortnight.
-const DANA: PayerContext = {
+export const DANA_CONTEXT: PayerContext = {
   amount: 45,
   day: 226,
   n_prior: 12,
@@ -72,7 +72,7 @@ export class MockDriver {
 
   /** Warm the model bridge at server boot so the first click never stalls. */
   async warm(): Promise<void> {
-    if (!this.plan) this.plan = await planRecovery('insufficient-funds', DANA);
+    if (!this.plan) this.plan = await planRecovery('insufficient-funds', DANA_CONTEXT);
   }
 
   async state(): Promise<DemoState> {
@@ -88,7 +88,7 @@ export class MockDriver {
     if (this.step < 3) this.step += 1;
     if (this.step >= 2 && !this.plan) {
       // THE SAME CODE PATH as the live webhook: gate → LightGBM → plan.
-      this.plan = await planRecovery('insufficient-funds', DANA);
+      this.plan = await planRecovery('insufficient-funds', DANA_CONTEXT);
     }
     return this.render();
   }
@@ -105,7 +105,7 @@ export class MockDriver {
     return {
       method: 'SCORE', path: 'ml/scripts/score.py → LightGBM (model/cadence.txt)',
       mock: !this.plan.modelUsed,
-      body: DANA,
+      body: DANA_CONTEXT,
       response: {
         gate: this.plan.gate, p_dishonour: this.plan.pDishonour,
         best_retry_day: this.plan.bestRetryDay, retry_scores: this.plan.retryScores,
@@ -170,7 +170,7 @@ export class MockDriver {
     };
     if (s === 1) {
       base.narration = 'The bank run comes back: DISHONOURED — insufficient funds. $45 at risk, and with an incumbent biller Dana would now owe a $29.90 failure fee.';
-      base.payments = [{ id: PAY_A, amount: 45, date: THU_14, status: 'dishonoured', risk: 0.42, note: 'insufficient-funds — Refer to Drawer' }];
+      base.payments = [{ id: PAY_A, amount: 45, date: THU_14, status: 'dishonoured', risk, note: 'insufficient-funds — Refer to Drawer' }];
       base.calls = [bankResults];
       return base;
     }

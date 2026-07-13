@@ -19,7 +19,11 @@ Here's Dana. Her $45 debit — the model scores it, live, right now: **64% disho
 *[IF LIVE RUN EXISTS BY RECORDING]:* "Every call you just saw hit the Pinch sandbox — here are the raw payloads."
 *[IF NOT — fallback line, disclosed]:* "The payloads you see are byte-exact to Pinch's documented events; the model and the decision loop are running live, and the sandbox wiring is the day-one task with API keys — the code path is one and the same."
 
-**[2:05 — the ML, honestly]** *(tightened)*
+**[1:55 — THE SPECTACLE BEAT: the model made tangible]**
+One more thing — *drag the debit*. *(live: dragging Dana's debit across the calendar, the risk number re-scores in real time — climbing as it approaches the pre-payday trough, collapsing the day after payday)* This is the model as an object you can touch: **every date has a price, and Cadence knows it.** No rule table does this. This curve was learned from behaviour — and it re-learns per payer.
+
+**[2:05 — the ML, honestly + why me]** *(tightened)*
+A word on who's talking: I build calibrated ML on money rails for a living — models that have to survive an engineer reading the eval code, not a slide. Everything here is inspectable: payer-level hold-outs, a heuristic baseline the model must beat, an ablation that proves the lift is structure rather than leakage. **That discipline is the product.**
 Disclosed synthetic ledger, calibrated to published failure benchmarks. The model **rediscovers each payer's hidden pay-cycle from timing alone** and beats a payday-heuristic baseline **46% to 38%** recovery on held-out payers, ablation-checked against leakage. Three honest limits, before you ask: **(1) degradation** — gig-income and shared-account payers are in the generator, but the real curve needs a back-test on a real BECS ledger — that's the pilot we're proposing; **(2) cold start** — a new payer needs ~2 failures before the cycle estimate exists; production warm-starts from network-wide dishonour history and merchant billing anchors; **(3) data access** — that network history is *Pinch's* data, which is exactly why this belongs inside Pinch rather than bolted on from outside.
 
 **[2:30 — business + close]**

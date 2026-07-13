@@ -49,13 +49,19 @@ const JUDGE_SCHEMA = {
       user_experience: { type: 'number' }, commercial_potential: { type: 'number' },
       problem_solving: { type: 'number' }, effective_use_of_pinch: { type: 'number' },
     }, required: ['innovation','technical_execution','user_experience','commercial_potential','problem_solving','effective_use_of_pinch'] },
+    // THE TWO-PART WIN — scored separately from the official criteria:
+    meta_scores: { type: 'object', additionalProperties: false, properties: {
+      product_spectacle: { type: 'number', description: '1-10: would the room audibly react? is there a gasp beat?' },
+      founder_signal: { type: 'number', description: '1-10: does the entry prove a UNIQUE ability — would you personally hire/back this founder after 3 minutes? Is the ML craft visible and un-fakeable, or could any dev have shipped this?' },
+      pitch_craft: { type: 'number', description: '1-10: the pitch AS DELIVERED — narrative arc, pacing, one memorable number, a "why me" beat, Q&A readiness' },
+    }, required: ['product_spectacle','founder_signal','pitch_craft'] },
     total: { type: 'number' },
     verdict: { type: 'string', enum: ['clear-winner','finalist','middle-of-pack','weak'] },
     brutal_questions: { type: 'array', items: { type: 'string' }, maxItems: 3 },
     biggest_fix: { type: 'string' },
     what_flips_to_win: { type: 'string' },
   },
-  required: ['judge','model_notes','scores','total','verdict','brutal_questions','biggest_fix','what_flips_to_win'],
+  required: ['judge','model_notes','scores','meta_scores','total','verdict','brutal_questions','biggest_fix','what_flips_to_win'],
 }
 
 phase('Judge')
@@ -70,7 +76,11 @@ ${COMPETITION}
 Read the pitch: Read the file ${pitchFile}
 Then inspect the evidence like a judge would: Read ${REPO}/README.md and, if you want more, ${REPO}/docs/final-verdict.md and ${REPO}/ml/outputs/metrics.json (ML results) — spot-check claims against what's actually in the repo.
 
-Score the entry 1-10 on each of the six REAL criteria, give a verdict, your 3 most brutal Q&A questions, the single biggest fix, and what would flip this to a clear win FOR YOU specifically. Judge the pitch AS DELIVERED — do not fill gaps charitably. Be the persona, not a generic reviewer.`,
+Score the entry 1-10 on each of the six REAL criteria, AND the three meta dimensions (the founder is explicitly playing a two-part game: a spectacular product that proves a UNIQUE personal ability — this entry doubles as a hiring audition — and pitch delivery as its own craft):
+- product_spectacle: would the room audibly react? is there a gasp beat, or just competence?
+- founder_signal: after 3 minutes, would YOU hire or back this specific person? Is the ML/engineering craft visible and un-fakeable, or could any competent dev have shipped it?
+- pitch_craft: the script as delivered — arc, pacing, ONE number the room remembers, a "why me" beat, Q&A readiness.
+Give a verdict, your 3 most brutal Q&A questions, the single biggest fix, and what would flip this to a clear win FOR YOU specifically. Judge the pitch AS DELIVERED — do not fill gaps charitably. Be the persona, not a generic reviewer.`,
     { label: `judge:${persona.key}@${model}`, phase: 'Judge', model, schema: JUDGE_SCHEMA }
   )
 }))
@@ -80,7 +90,7 @@ const chair = await agent(
   `You are the judging chair aggregating a 4-judge panel for the Pinch hackathon. Panel results:
 ${JSON.stringify(judges.filter(Boolean))}
 
-Produce: consensus scores per criterion (mean), total, the panel verdict, the TOP 5 fixes ranked by (impact on winning x how many judges raised it), the 5 hardest Q&A questions deduplicated, and a one-paragraph coaching note to the founder on what to change before the next round.`,
+Produce: consensus scores per criterion (mean), total, the panel verdict, the TOP 5 fixes ranked by (impact on winning x how many judges raised it), the 5 hardest Q&A questions deduplicated, and a one-paragraph coaching note to the founder on what to change before the next round. In the coaching note, address the TWO-PART GAME separately: (a) product spectacle + founder signal (is the unique ability visible?), (b) pitch craft as its own skill.`,
   { label: 'chair:synthesis', phase: 'Chair', schema: {
     type: 'object', additionalProperties: false,
     properties: {

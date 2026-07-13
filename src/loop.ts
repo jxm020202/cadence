@@ -62,6 +62,13 @@ export async function planRecovery(dishonourType: string, ctx: PayerContext): Pr
   }
 }
 
+/** Risk at every candidate date around the scheduled debit — the
+ * "drag the debit" demo beat. Returns offset(-7..+14) → P(dishonour). */
+export async function sweepRisk(ctx: PayerContext): Promise<Record<string, number>> {
+  const res = await scorePy({ ...ctx, sweep: true } as PayerContext & { sweep: true });
+  return (res as { p_by_offset?: Record<string, number> }).p_by_offset ?? {};
+}
+
 function scorePy(ctx: PayerContext): Promise<{
   p_dishonour: number; best_retry_day: number; retry_scores: Record<string, number>;
 }> {
