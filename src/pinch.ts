@@ -17,9 +17,8 @@ const AUTH_URL = 'https://auth.getpinch.com.au/connect/token';
 const API_BASE = `https://api.getpinch.com.au/${ENV}`;
 const PINCH_VERSION = process.env.PINCH_VERSION || '2020.1';
 
-const APP_ID = required('PINCH_APP_ID');
-const SECRET = required('PINCH_SECRET');
-
+// Lazy: only demanded on the first real API call, so the demo server (mock
+// driver) runs without sandbox keys.
 function required(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`Missing env var ${name} — copy .env.example to .env and fill it in.`);
@@ -34,7 +33,7 @@ async function getAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 30_000) {
     return cachedToken.value;
   }
-  const basic = Buffer.from(`${APP_ID}:${SECRET}`).toString('base64');
+  const basic = Buffer.from(`${required('PINCH_APP_ID')}:${required('PINCH_SECRET')}`).toString('base64');
   const res = await fetch(AUTH_URL, {
     method: 'POST',
     headers: {

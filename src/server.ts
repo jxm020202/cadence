@@ -3,6 +3,11 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Pinch } from './pinch.js';
 import { verifyPinchSignature } from './webhook.js';
+import { demo } from './demo/engine.js';
+import { handleBankResults, type PayerContext } from './loop.js';
+
+// payment-id → payer billing context (in-memory for demo; merchant DB in prod)
+const paymentContexts = new Map<string, PayerContext>();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -22,8 +27,17 @@ app.post(
       return res.status(400).send('bad signature');
     }
     const event = JSON.parse(raw);
-    console.log(`[webhook] ${event.Type ?? event.type} ${event.Id ?? event.id}`);
-    // TODO: route on event.Type — e.g. transfer / bank-results / scheduled-process
+    const type = event.Type ?? event.type;
+    console.log(`[webhook] ${type} ${event.Id ?? event.id}`);
+    if (type === 'bank-results') {
+      // THE LOOP: dishonour → hard-code gate → model score → savePayment re-time.
+      // Context lookup is in-memory for the demo; a merchant DB in production.
+      handleBankResults(event, (paymentId) => paymentContexts.get(paymentId))
+        .then((results) => results.forEach((r) =>
+          console.log(`[loop] ${r.paymentId}: ${r.plan.gate}` +
+            (r.plan.bestRetryDay != null ? ` day+${r.plan.bestRetryDay} p=${r.plan.pDishonour}` : ''))))
+        .catch((e) => console.error('[loop] failed:', e));
+    }
     res.sendStatus(200);
   },
 );
@@ -71,6 +85,12 @@ app.post('/api/payment-links', async (req, res) => {
     res.status(400).json({ error: String(e) });
   }
 });
+
+// --- demo engine (mock driver until sandbox keys; live driver via day-0 spike)
+app.get('/api/demo/state', async (_req, res) => res.json(await demo.state()));
+app.post('/api/demo/step', async (_req, res) => res.json(await demo.advance()));
+app.post('/api/demo/reset', async (_req, res) => res.json(await demo.reset()));
+demo.warm().then(() => console.log('[demo] model bridge warm')).catch((e) => console.warn('[demo] warm failed:', e));
 
 app.get('/thanks', (req, res) => {
   res.send(

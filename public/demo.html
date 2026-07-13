@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cadence — the recovered dollar</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #21262d; --text: #e6edf3; --dim: #8b949e;
+    --red: #f85149; --amber: #d29922; --green: #3fb950; --blue: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 15px/1.55 -apple-system, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 28px 32px; }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  h1 { font-size: 22px; letter-spacing: 0.3px; }
+  .mode { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--amber); color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
+  .sub { color: var(--dim); margin-bottom: 22px; }
+  .grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+  .payer { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .payer b { font-size: 17px; }
+  .payer span { color: var(--dim); font-size: 13px; }
+  .counter { text-align: right; }
+  .counter .val { font-size: 34px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+  .counter .lbl { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+  .timeline { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+  .debit { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); transition: border-color .5s, box-shadow .5s; }
+  .chip { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; min-width: 108px; text-align: center; }
+  .scheduled .chip { background: #1f3a5f; color: var(--blue); }
+  .dishonoured .chip { background: #4a1214; color: var(--red); }
+  .dishonoured { border-color: var(--red); box-shadow: 0 0 14px #f8514922; }
+  .settled .chip { background: #12401f; color: var(--green); }
+  .settled { border-color: var(--green); box-shadow: 0 0 14px #3fb95022; }
+  .debit .amt { font-size: 17px; font-weight: 600; min-width: 70px; }
+  .debit .meta { color: var(--dim); font-size: 13px; }
+  .risk { margin-left: auto; font-size: 12px; color: var(--amber); }
+  .narration { min-height: 52px; color: var(--text); font-size: 16px; padding: 10px 2px; }
+  .sms { border: 1px dashed var(--blue); border-radius: 10px; padding: 10px 14px; color: var(--blue); font-size: 13px; margin-top: 8px; display: none; }
+  .controls { display: flex; gap: 10px; margin-top: 16px; }
+  button { background: #21262d; border: 1px solid #30363d; color: var(--text); border-radius: 8px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
+  button.primary { background: #1f6feb; border-color: #1f6feb; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  .calls { font: 12px/1.5 ui-monospace, Menlo, monospace; }
+  .calls h3 { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .call { border-left: 3px solid var(--blue); padding: 8px 12px; margin-bottom: 10px; background: var(--bg); border-radius: 0 6px 6px 0; overflow-x: auto; }
+  .call .rq { color: var(--blue); font-weight: 700; }
+  .call .hdr { color: var(--amber); }
+  .call pre { color: var(--dim); white-space: pre-wrap; word-break: break-word; margin-top: 4px; }
+  .mocktag { color: var(--amber); font-size: 10px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Cadence</h1>
+    <span class="mode" id="mode">sandbox mock — payload-exact</span>
+  </header>
+  <div class="sub">One debit. Re-timed to payday. Same rails, same authority — better timing.</div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="payer">
+        <div><b id="payerName">Dana</b><br /><span id="payerPlan"></span></div>
+        <div class="counter"><div class="val" id="counter">$0.00</div><div class="lbl">recovered</div></div>
+      </div>
+      <div class="narration" id="narration"></div>
+      <div class="timeline" id="timeline"></div>
+      <div class="sms" id="sms"></div>
+      <div class="controls">
+        <button class="primary" id="next">Run to bank date ▸</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+    <div class="card calls">
+      <h3>Pinch API — requests &amp; events</h3>
+      <div id="calls"></div>
+    </div>
+  </div>
+
+<script>
+  const NEXT_LABELS = ['Run to bank date ▸', 'Cadence re-times to payday ▸', 'Time-travel to payday ▸', 'Done — $45 recovered'];
+  const nextBtn = document.getElementById('next');
+
+  function money(v) { return '$' + v.toFixed(2); }
+
+  function render(s) {
+    document.getElementById('payerPlan').textContent = s.payer.plan;
+    document.getElementById('narration').textContent = s.narration;
+    nextBtn.textContent = NEXT_LABELS[s.step];
+    nextBtn.disabled = s.done;
+
+    const tl = document.getElementById('timeline');
+    tl.innerHTML = '';
+    for (const p of s.payments) {
+      const div = document.createElement('div');
+      div.className = 'debit ' + p.status;
+      div.innerHTML = `
+        <span class="chip">${p.status}</span>
+        <span class="amt">${money(p.amount)}</span>
+        <span class="meta">${p.date}${p.note ? ' · ' + p.note : ''}</span>
+        ${p.risk != null ? `<span class="risk">risk ${(p.risk * 100).toFixed(0)}%</span>` : ''}`;
+      tl.appendChild(div);
+    }
+
+    const sms = document.getElementById('sms');
+    if (s.smsSent) { sms.style.display = 'block'; sms.textContent = '📱 ' + s.smsSent; }
+    else sms.style.display = 'none';
+
+    // animate the counter on settle
+    const counter = document.getElementById('counter');
+    const target = s.recoveredAud;
+    const current = parseFloat(counter.textContent.slice(1));
+    if (target > current) {
+      const t0 = performance.now();
+      (function tick(t) {
+        const k = Math.min((t - t0) / 900, 1);
+        counter.textContent = money(current + (target - current) * k);
+        if (k < 1) requestAnimationFrame(tick);
+      })(t0);
+    } else counter.textContent = money(target);
+
+    const calls = document.getElementById('calls');
+    calls.innerHTML = '';
+    for (const c of s.calls) {
+      const div = document.createElement('div');
+      div.className = 'call';
+      const hdrs = c.headers ? Object.entries(c.headers).map(([k, v]) => `<div class="hdr">${k}: ${v}</div>`).join('') : '';
+      div.innerHTML = `
+        <div class="rq">${c.method} ${c.path} ${c.mock ? '<span class="mocktag">· MOCK</span>' : ''}</div>
+        ${hdrs}
+        ${c.body ? `<pre>${JSON.stringify(c.body, null, 1)}</pre>` : ''}
+        ${c.response ? `<pre>→ ${JSON.stringify(c.response, null, 1)}</pre>` : ''}`;
+      calls.appendChild(div);
+    }
+  }
+
+  async function api(path, method = 'GET') {
+    const r = await fetch(path, { method });
+    return r.json();
+  }
+  nextBtn.addEventListener('click', async () => render(await api('/api/demo/step', 'POST')));
+  document.getElementById('reset').addEventListener('click', async () => render(await api('/api/demo/reset', 'POST')));
+  api('/api/demo/state').then(render);
+</script>
+</body>
+</html>
