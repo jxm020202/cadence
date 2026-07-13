@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Onboard — become a payments platform in minutes</title>
+<style>
+  /* Visual language shared with the Cadence stage (public/demo.html) */
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #21262d; --text: #e6edf3; --dim: #8b949e;
+    --red: #f85149; --amber: #d29922; --green: #3fb950; --blue: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 15px/1.55 -apple-system, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 28px 32px; }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  h1 { font-size: 22px; letter-spacing: 0.3px; }
+  .mode { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--amber); color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
+  .sub { color: var(--dim); margin-bottom: 18px; }
+
+  /* progress rail */
+  .rail { display: flex; align-items: center; gap: 0; margin: 6px 0 20px; }
+  .station { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; color: var(--dim); background: var(--panel); transition: all .4s; }
+  .station .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+  .station.active .dot { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 12px #58a6ff33; }
+  .station.active .lbl { color: var(--blue); }
+  .station.done .dot { border-color: var(--green); background: #12401f; color: var(--green); }
+  .station.done .lbl { color: var(--green); }
+  .link { flex: 1; height: 2px; background: var(--line); margin: 0 12px; min-width: 30px; }
+  .link.done { background: var(--green); }
+
+  .grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+  .stagehead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .stagehead b { font-size: 17px; }
+  .stagehead span { color: var(--dim); font-size: 13px; }
+  .counter { text-align: right; }
+  .counter .val { font-size: 34px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+  .counter .lbl { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+  .narration { min-height: 48px; font-size: 16px; padding: 8px 2px 12px; }
+
+  textarea { width: 100%; min-height: 130px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font: 13px/1.6 ui-monospace, Menlo, monospace; resize: vertical; }
+  textarea:focus { outline: none; border-color: var(--blue); }
+
+  .merchant { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--bg); margin: 10px 0; }
+  .merchant b { font-size: 16px; }
+  .merchant .mid { color: var(--dim); font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+  .chip { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; margin-left: auto; }
+  .chip.drafted { background: #1f3a5f; color: var(--blue); }
+  .chip.pending-verification { background: #3d2e00; color: var(--amber); }
+  .chip.active { background: #12401f; color: var(--green); }
+  .merchant.is-live { border-color: var(--green); box-shadow: 0 0 14px #3fb95022; }
+
+  .fields { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 4px; }
+  .fields th { text-align: left; color: var(--dim); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  .fields td { padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .fields td.k { color: var(--blue); font-family: ui-monospace, Menlo, monospace; font-size: 12px; white-space: nowrap; }
+  .fields td.src { color: var(--dim); font-size: 12px; font-style: italic; }
+  .missing { color: var(--amber); font-size: 12px; margin: 4px 0; }
+
+  /* ABN checksum strip — the spectacle micro-beat */
+  .abnbox { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 12px 0; background: var(--bg); }
+  .abnbox .head { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .livetag { color: var(--green); border: 1px solid var(--green); border-radius: 20px; padding: 1px 8px; font-size: 10px; }
+  .abnrow { display: flex; gap: 4px; flex-wrap: wrap; }
+  .abncell { text-align: center; min-width: 34px; }
+  .abncell .d { font: 700 18px/1 ui-monospace, Menlo, monospace; border: 1px solid var(--line); border-radius: 6px; padding: 8px 0; cursor: pointer; background: var(--panel); transition: all .2s; position: relative; }
+  .abncell .d:hover { border-color: var(--blue); }
+  .abncell .d .adj { position: absolute; top: 1px; right: 3px; font-size: 8px; color: var(--amber); }
+  .abncell .w, .abncell .p { font-size: 10px; color: var(--dim); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .abncell .p { color: var(--text); }
+  .abnread { margin-top: 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .abnread b.ok { color: var(--green); }
+  .abnread b.bad { color: var(--red); }
+  .abnbox.bad { border-color: var(--red); box-shadow: 0 0 14px #f8514922; }
+  .restore { color: var(--blue); font-size: 12px; cursor: pointer; background: none; border: none; padding: 0; margin-left: auto; }
+
+  .kyc { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+  .doc { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; background: var(--bg); }
+  .doc .nm { font-weight: 600; font-size: 14px; }
+  .doc .why { color: var(--dim); font-size: 12px; }
+  .doc .chip.uploaded { background: #1f3a5f; color: var(--blue); }
+  .doc .chip.verified { background: #12401f; color: var(--green); }
+  .doc .chip.required { background: #3d2e00; color: var(--amber); }
+
+  /* the money split */
+  .split { margin: 12px 0; }
+  .split .bar { display: flex; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  .split .seg { display: grid; place-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; padding: 0 6px; }
+  .seg.net { background: #12401f; color: var(--green); }
+  .seg.cut { background: #1f3a5f; color: var(--blue); }
+  .seg.fee { background: #21262d; color: var(--dim); }
+  .split .legend { display: flex; gap: 18px; margin-top: 8px; font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+
+  .controls { display: flex; gap: 10px; margin-top: 16px; }
+  button { background: #21262d; border: 1px solid #30363d; color: var(--text); border-radius: 8px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
+  button.primary { background: #1f6feb; border-color: #1f6feb; }
+  button:disabled { opacity: 0.4; cursor: default; }
+
+  .calls { font: 12px/1.5 ui-monospace, Menlo, monospace; }
+  .calls h3 { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .call { border-left: 3px solid var(--blue); padding: 8px 12px; margin-bottom: 10px; background: var(--bg); border-radius: 0 6px 6px 0; overflow-x: auto; }
+  .call.real { border-left-color: var(--green); }
+  .call .rq { color: var(--blue); font-weight: 700; }
+  .call.real .rq { color: var(--green); }
+  .call .hdr { color: var(--amber); }
+  .call pre { color: var(--dim); white-space: pre-wrap; word-break: break-word; margin-top: 4px; }
+  .mocktag { color: var(--amber); font-size: 10px; letter-spacing: 1px; }
+  .realtag { color: var(--green); font-size: 10px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Onboard</h1>
+    <span class="mode">sandbox mock — payload-exact · brain is live</span>
+  </header>
+  <div class="sub">Paste a business. Become its payments platform. Managed Merchants + one field — <code>applicationFee</code> — is the whole business model.</div>
+
+  <div class="rail" id="rail"></div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="stagehead">
+        <div><b id="mname">Your marketplace</b><br /><span id="mstatusline">waiting for a merchant…</span></div>
+        <div class="counter"><div class="val" id="counter">$0.00</div><div class="lbl">platform cut</div></div>
+      </div>
+      <div class="narration" id="narration"></div>
+
+      <div id="pasteZone">
+        <textarea id="blob" spellcheck="false"></textarea>
+      </div>
+
+      <div id="merchantCard" class="merchant" style="display:none">
+        <div><b id="merchName"></b><br /><span class="mid" id="merchId"></span></div>
+        <span class="chip" id="merchChip"></span>
+      </div>
+
+      <div id="fieldsZone" style="display:none">
+        <table class="fields">
+          <thead><tr><th>payload field</th><th>drafted value</th><th>from the paste</th></tr></thead>
+          <tbody id="fieldsBody"></tbody>
+        </table>
+        <div class="missing" id="missing"></div>
+      </div>
+
+      <div class="abnbox" id="abnBox" style="display:none">
+        <div class="head">ABN checksum — weighted mod-89, first digit −1 <span class="livetag">live math — click a digit</span>
+          <button class="restore" id="restoreAbn" style="display:none">↺ restore ABN</button>
+        </div>
+        <div class="abnrow" id="abnRow"></div>
+        <div class="abnread" id="abnRead"></div>
+      </div>
+
+      <div class="kyc" id="kyc"></div>
+
+      <div class="split" id="split" style="display:none">
+        <div class="bar" id="splitBar"></div>
+        <div class="legend" id="splitLegend"></div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="next">Draft the merchant ▸</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="card calls">
+      <h3>Pinch API — requests &amp; events</h3>
+      <div id="calls"></div>
+    </div>
+  </div>
+
+<script>
+  const NEXT_LABELS = [
+    'Draft the merchant ▸',
+    'Upload the KYC pack ▸',
+    'Verification passes — go live ▸',
+    'Collect the first dollar ▸',
+    'Done — you earn on every sale',
+  ];
+  const nextBtn = document.getElementById('next');
+  const money = (c) => '$' + (c / 100).toFixed(2);
+
+  let originalAbn = null; // 11-digit string from the drafted state
+  let workingAbn = null;  // client-side flipped copy (server re-checks every flip)
+
+  function renderRail(rail) {
+    const el = document.getElementById('rail');
+    el.innerHTML = '';
+    rail.forEach((r, i) => {
+      if (i > 0) {
+        const link = document.createElement('div');
+        link.className = 'link' + (r.state === 'done' || rail[i - 1].state === 'done' && r.state !== 'todo' ? ' done' : '');
+        el.appendChild(link);
+      }
+      const st = document.createElement('div');
+      st.className = 'station ' + r.state;
+      st.innerHTML = `<div class="dot">${r.state === 'done' ? '✓' : i + 1}</div><div class="lbl">${r.label}</div>`;
+      el.appendChild(st);
+    });
+  }
+
+  function renderAbn(check, flipped) {
+    const box = document.getElementById('abnBox');
+    if (!check) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.classList.toggle('bad', !check.valid);
+    document.getElementById('restoreAbn').style.display = flipped ? 'inline' : 'none';
+    const row = document.getElementById('abnRow');
+    row.innerHTML = '';
+    check.digits.forEach((d, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'abncell';
+      cell.innerHTML = `
+        <div class="d" title="click to flip this digit">${d}${i === 0 ? '<span class="adj">−1</span>' : ''}</div>
+        <div class="w">×${check.weights[i]}</div>
+        <div class="p">${check.products[i]}</div>`;
+      cell.querySelector('.d').addEventListener('click', () => flipDigit(i));
+      row.appendChild(cell);
+    });
+    const verdict = check.valid
+      ? `<b class="ok">= ${check.sum} → ${check.sum} mod 89 = 0 ✓ VALID ABN</b>`
+      : `<b class="bad">= ${check.sum} → mod 89 = ${check.remainder} ✗ FAILS — application blocked before KYC</b>`;
+    document.getElementById('abnRead').innerHTML = `weighted sum ${verdict}`;
+  }
+
+  async function flipDigit(i) {
+    if (!workingAbn) return;
+    const digits = [...workingAbn];
+    digits[i] = String((Number(digits[i]) + 1) % 10);
+    workingAbn = digits.join('');
+    const r = await fetch('/api/onboard/abn', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ abn: workingAbn }),
+    });
+    renderAbn(await r.json(), workingAbn !== originalAbn);
+  }
+  document.getElementById('restoreAbn').addEventListener('click', async () => {
+    workingAbn = originalAbn;
+    const r = await fetch('/api/onboard/abn', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ abn: workingAbn }),
+    });
+    renderAbn(await r.json(), false);
+  });
+
+  function render(s) {
+    renderRail(s.rail);
+    document.getElementById('narration').textContent = s.narration;
+    nextBtn.textContent = NEXT_LABELS[s.step];
+    nextBtn.disabled = s.done;
+
+    // paste zone only on the first beat
+    document.getElementById('pasteZone').style.display = s.step === 0 ? 'block' : 'none';
+    if (s.step === 0) document.getElementById('blob').value = s.blob;
+
+    // merchant card
+    const mc = document.getElementById('merchantCard');
+    if (s.merchant) {
+      mc.style.display = 'flex';
+      mc.classList.toggle('is-live', s.merchant.status === 'active');
+      document.getElementById('merchName').textContent = s.merchant.name;
+      document.getElementById('merchId').textContent = s.merchant.id;
+      const chip = document.getElementById('merchChip');
+      chip.textContent = s.merchant.status === 'active' ? 'LIVE' : s.merchant.status;
+      chip.className = 'chip ' + s.merchant.status;
+      document.getElementById('mname').textContent = s.merchant.name;
+      document.getElementById('mstatusline').textContent =
+        s.merchant.status === 'active' ? 'collecting under your credentials' : 'onboarding…';
+    } else {
+      mc.style.display = 'none';
+      document.getElementById('mname').textContent = 'Your marketplace';
+      document.getElementById('mstatusline').textContent = 'waiting for a merchant…';
+    }
+
+    // drafted fields with provenance
+    const fz = document.getElementById('fieldsZone');
+    if (s.fields && s.step === 1) {
+      fz.style.display = 'block';
+      const tb = document.getElementById('fieldsBody');
+      tb.innerHTML = '';
+      for (const f of s.fields) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="k">${f.key}</td><td>${f.value}</td><td class="src">“${f.source}”</td>`;
+        tb.appendChild(tr);
+      }
+      document.getElementById('missing').textContent =
+        s.missing?.length ? '⚠ still needed: ' + s.missing.join(', ') : '';
+    } else fz.style.display = 'none';
+
+    // ABN strip (steps 1+; interactive)
+    if (s.abn && s.step >= 1 && s.step <= 2) {
+      if (originalAbn !== s.abn.abn) { originalAbn = s.abn.abn; workingAbn = s.abn.abn; }
+      renderAbn(s.abn, workingAbn !== originalAbn);
+    } else document.getElementById('abnBox').style.display = 'none';
+
+    // KYC checklist
+    const kyc = document.getElementById('kyc');
+    kyc.innerHTML = '';
+    if (s.checklist && s.step >= 2) {
+      for (const d of s.checklist) {
+        const div = document.createElement('div');
+        div.className = 'doc';
+        div.innerHTML = `<div><div class="nm">${d.name}</div><div class="why">${d.why} · ${d.file}</div></div>
+          <span class="chip ${d.status}">${d.status}</span>`;
+        kyc.appendChild(div);
+      }
+    }
+
+    // money split
+    const split = document.getElementById('split');
+    if (s.money) {
+      split.style.display = 'block';
+      const m = s.money;
+      document.getElementById('splitBar').innerHTML = `
+        <div class="seg net" style="flex:${m.netToMerchant}">merchant ${money(m.netToMerchant)}</div>
+        <div class="seg cut" style="flex:${m.applicationFee};min-width:110px">you ${money(m.applicationFee)}</div>
+        <div class="seg fee" style="flex:${m.processingFee};min-width:90px">pinch ${money(m.processingFee)}</div>`;
+      document.getElementById('splitLegend').innerHTML = `
+        <span><i style="background:#12401f"></i>settlement ${money(m.gross)}</span>
+        <span><i style="background:#1f3a5f"></i>applicationFee −${money(m.applicationFee)}</span>
+        <span><i style="background:#21262d"></i>processing −${money(m.processingFee)}</span>
+        <span>net to merchant ${money(m.netToMerchant)} — reconciles to the cent</span>`;
+    } else split.style.display = 'none';
+
+    // platform-cut counter (animated, like the Cadence recovered counter)
+    const counter = document.getElementById('counter');
+    const target = (s.money?.platformEarnings ?? 0) / 100;
+    const current = parseFloat(counter.textContent.slice(1));
+    if (target > current) {
+      const t0 = performance.now();
+      (function tick(t) {
+        const k = Math.min((t - t0) / 900, 1);
+        counter.textContent = '$' + (current + (target - current) * k).toFixed(2);
+        if (k < 1) requestAnimationFrame(tick);
+      })(t0);
+    } else counter.textContent = '$' + target.toFixed(2);
+
+    // API pane — the honesty contract: MOCK vs REAL on every pane
+    const calls = document.getElementById('calls');
+    calls.innerHTML = '';
+    for (const c of s.calls) {
+      const div = document.createElement('div');
+      div.className = 'call' + (c.mock ? '' : ' real');
+      const hdrs = c.headers ? Object.entries(c.headers).map(([k, v]) => `<div class="hdr">${k}: ${v}</div>`).join('') : '';
+      div.innerHTML = `
+        <div class="rq">${c.method} ${c.path} ${c.mock ? '<span class="mocktag">· MOCK</span>' : '<span class="realtag">· REAL</span>'}</div>
+        ${hdrs}
+        ${c.body ? `<pre>${JSON.stringify(c.body, null, 1)}</pre>` : ''}
+        ${c.response ? `<pre>→ ${JSON.stringify(c.response, null, 1)}</pre>` : ''}`;
+      calls.appendChild(div);
+    }
+  }
+
+  async function api(path, method = 'GET', body) {
+    const r = await fetch(path, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return r.json();
+  }
+
+  nextBtn.addEventListener('click', async () => {
+    const state = await api('/api/onboard/state');
+    if (state.step === 0) {
+      render(await api('/api/onboard/draft', 'POST', { blob: document.getElementById('blob').value }));
+    } else {
+      render(await api('/api/onboard/step', 'POST'));
+    }
+  });
+  document.getElementById('reset').addEventListener('click', async () => {
+    originalAbn = null; workingAbn = null;
+    render(await api('/api/onboard/reset', 'POST'));
+  });
+  api('/api/onboard/state').then(render);
+</script>
+</body>
+</html>

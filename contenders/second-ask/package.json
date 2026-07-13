@@ -1,0 +1,12 @@
+{
+  "name": "second-ask",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Post-dishonour conversational recovery on the Pinch API: the agent asks the payer when suits, parses the reply deterministically, and schedules the recovery debit on the payer's own stated day.",
+  "scripts": {
+    "start": "../../node_modules/.bin/tsx server.ts",
+    "typecheck": "../../node_modules/.bin/tsc --noEmit -p .",
+    "test": "../../node_modules/.bin/tsx parser.test.ts"
+  }
+}
