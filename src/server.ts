@@ -89,7 +89,8 @@ app.post('/api/payment-links', async (req, res) => {
 // --- demo engine (mock driver until sandbox keys; live driver via day-0 spike)
 app.get('/api/demo/state', async (_req, res) => res.json(await demo.state()));
 app.post('/api/demo/step', async (_req, res) => res.json(await demo.advance()));
-app.post('/api/demo/reset', async (_req, res) => res.json(await demo.reset()));
+app.post('/api/demo/reset', async (req, res) => res.json(await demo.reset(req.body?.scenario)));
+app.post('/api/demo/reply', async (req, res) => res.json(await demo.reply(String(req.body?.text ?? ''))));
 demo.warm().then(() => console.log('[demo] model bridge warm')).catch((e) => console.warn('[demo] warm failed:', e));
 
 // the "drag the debit" spectacle beat: model risk at every candidate date
