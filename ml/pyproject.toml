@@ -1,0 +1,15 @@
+[project]
+name = "cadence-ml"
+version = "0.1.0"
+description = "Cadence ML core: synthetic AU BECS ledger generator + dishonour-prediction model + retry-timing evaluation"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "lightgbm>=4.3",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+]
+
+[tool.uv]
+package = false
