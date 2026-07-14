@@ -12,10 +12,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pinch } from './pinch.js';
 import { classify, human, iso, rollForward } from './consent/parser.js';
+import { IdempotencyStore } from './idempotency.js';
+import { PaymentStateLog } from './ledger.js';
 
 // Cadence's take, as a NATIVE Pinch primitive: applicationFee on the recovery
 // payment, reconciled in the transfer line-items. 15% of recovered dollars.
 export const CADENCE_FEE_RATE = 0.15;
+
+// Process-wide guards. Bank-results webhooks are at-least-once, so the recovery
+// act is wrapped in the idempotency store: a re-delivered event never debits
+// the payer twice. Every lifecycle transition lands in the append-only log.
+export const idempotency = new IdempotencyStore();
+export const stateLog = new PaymentStateLog();
 
 const ML_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'ml');
 
@@ -172,8 +180,10 @@ export async function handleBankResults(
     const ctx = lookupContext(paymentId);
     if (!ctx) { console.warn(`[loop] no context for ${paymentId}`); continue; }
 
+    stateLog.append({ ts: new Date().toISOString(), paymentId, payerId: ctx.payerId ?? '?',
+      state: 'dishonoured', reason: dishonourType, amountCents: Math.round(ctx.amount * 100) });
     const plan = await planRecovery(dishonourType, ctx);
-    const result: { paymentId: string; plan: RecoveryPlan; actedWith?: unknown } = { paymentId, plan };
+    const result: { paymentId: string; plan: RecoveryPlan; actedWith?: unknown; idempotent?: string } = { paymentId, plan };
 
     if (plan.gate === 'retry' && plan.bestRetryDay != null && opts.act) {
       if (!ctx.payerId) {
@@ -194,10 +204,15 @@ export async function handleBankResults(
         applicationFee: Math.round(ctx.amount * 100 * CADENCE_FEE_RATE),
       };
       result.actedWith = body;
-      // THE ACT: a NEW model-timed recovery payment via save-payment (create).
-      // Deliberate design: we never mutate the dishonoured payment's record —
-      // it stays in history as the failure; the recovery is its own object.
-      await Pinch.savePayment(body);
+      stateLog.append({ ts: new Date().toISOString(), paymentId, payerId: ctx.payerId,
+        state: 'rescheduled', reason: `model day+${plan.bestRetryDay}`, amountCents: body.amount });
+      // THE ACT, guarded: a NEW model-timed recovery via save-payment (create),
+      // wrapped so an at-least-once re-delivery of this bank-results event can
+      // never fire a second debit. Same payload → replay; different → 409.
+      const { replayed } = await idempotency.run(
+        'recover', paymentId, body, () => Pinch.savePayment(body), new Date().toISOString(),
+      );
+      result.idempotent = replayed ? 'replayed' : 'acted';
     }
     results.push(result);
   }
