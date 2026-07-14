@@ -12,6 +12,9 @@
  * against the reference (docs/pinch-api-reference.md) as we wire each flow up.
  */
 
+// Load .env (test keys) if the process wasn't started with them already.
+if (!process.env.PINCH_APP_ID) { try { process.loadEnvFile(); } catch { /* no .env — fine */ } }
+
 const ENV = process.env.PINCH_ENV === 'live' ? 'live' : 'test';
 const AUTH_URL = 'https://auth.getpinch.com.au/connect/token';
 const API_BASE = `https://api.getpinch.com.au/${ENV}`;
@@ -104,8 +107,9 @@ export const Pinch = {
   listPayers: () => api('GET', '/payers'),
   getPayer: (id: string) => api('GET', `/payers/${id}`),
 
-  // Attach a saved payment method to a payer (card token from CaptureJs, or bank account).
-  createPaymentSource: (source: Json) => api('POST', '/payment-sources', source),
+  // Attach a saved payment method to a payer. VERIFIED path: /payers/{id}/sources
+  // (bank account: {sourceType:'bank-account', bankAccountName, bankAccountBsb, bankAccountNumber}).
+  createPaymentSource: (payerId: string, source: Json) => api('POST', `/payers/${payerId}/sources`, source),
 
   // One-off collection. `token` comes from CaptureJs (client-side), or use an
   // existing `sourceId`. Amount in cents. `nonce` prevents accidental doubles.
