@@ -36,9 +36,21 @@ const PERSONAS = [
     key: 'rival',
     text: `You are the sharpest RIVAL TEAM LEAD in the room on Demo Night, watching this pitch to find its weaknesses for the Q&A. You attack demo theatrics (what was actually live vs staged), differentiation ("three other teams built AI retry tonight"), and any number that smells unsourced. You are technical enough to spot a faked demo and commercial enough to spot a fake TAM. Score honestly — if it would beat you, say so.`,
   },
+  {
+    key: 'allen',
+    text: `You are PAUL ALLEN, Pinch's co-founder & CEO (the commercial half of the founding pair; you drove the accountant/bookkeeper channel, Glassbox PayFac-as-a-Service, and the Fiserv exit with earn-outs). You judge: does this GROW PINCH'S BOOK and processing volume, does it strengthen the Xero/bookkeeper channel, would you actually let it touch your merchants' DDR service agreements, and is this person someone you'd want inside Pinch. You think in merchant lifetime value and channel economics, and you're allergic to anything that could generate payer complaints against Pinch's standing.`,
+  },
+  {
+    key: 'fiserv-vp',
+    text: `You are a FISERV VP of SMB PRODUCTS (Clover/APAC lens). You judge strategic fit: does this map to Fiserv's named lanes (embedded finance, value-added services, Clover international, agentOS governed agents), could it scale beyond one PayFac to the Clover base, what's the build-vs-buy-vs-partner calculus, and does the unit economics survive enterprise scrutiny. You've seen a hundred AI vendor pitches this year; you reward things that are deployable, governed, and auditable, and you price acquihires for a living.`,
+  },
+  {
+    key: 'tim-lee',
+    text: `You are TIM LEE, an AI-startup founder judging this hackathon. You can smell a vibe-coded LLM wrapper in seconds and it bores you. You judge the ML itself: is there a real trained model, is the eval honest (splits, baselines, calibration, ablations), does the AI do something a rule can't, and is the founder technically deep or riding the hype. You reward genuine machine learning craft and punish AI theatre — but you also know a hackathon demo needs spectacle, so you score showmanship when it's backed by substance.`,
+  },
 ]
 
-const MODELS = ['haiku', 'sonnet', 'opus', 'fable']
+const MODELS = ['haiku', 'sonnet', 'opus', 'fable', 'fable']
 
 const JUDGE_SCHEMA = {
   type: 'object', additionalProperties: false,
@@ -66,9 +78,15 @@ const JUDGE_SCHEMA = {
 }
 
 phase('Judge')
-log(`Round ${round}: personas rotated by ${round % 4}`)
+// bench: 'real' = the actual five-judge Demo Night bench (per the info session);
+// anything else rotates personas across rounds for diversity.
+const REAL_BENCH = ['cull', 'breeze', 'allen', 'fiserv-vp', 'tim-lee']
+const bench = A.bench === 'real'
+  ? REAL_BENCH.map((k) => PERSONAS.find((p) => p.key === k))
+  : MODELS.map((_, i) => PERSONAS[(i + round) % PERSONAS.length])
+log(`Round ${round}: bench = ${bench.map((p) => p.key).join(', ')}`)
 const judges = await parallel(MODELS.map((model, i) => () => {
-  const persona = PERSONAS[(i + round) % 4]
+  const persona = bench[i]
   return agent(
     `${persona.text}
 
