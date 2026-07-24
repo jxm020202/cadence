@@ -122,6 +122,12 @@
   function money(v) { return '$' + v.toFixed(2); }
 
   function render(s) {
+    const mode = document.getElementById('mode');
+    if (mode) {
+      mode.textContent = s.live ? 'LIVE — real Pinch sandbox' : 'sandbox mock — payload-exact';
+      mode.style.color = s.live ? 'var(--green)' : '';
+      mode.style.borderColor = s.live ? 'var(--green)' : '';
+    }
     document.getElementById('payerPlan').textContent = s.payer.plan;
     document.getElementById('narration').textContent = s.narration;
     nextBtn.textContent = LABELS[s.scenario][s.step];

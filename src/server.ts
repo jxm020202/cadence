@@ -3,8 +3,15 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Pinch } from './pinch.js';
 import { verifyPinchSignature } from './webhook.js';
-import { demo, DANA_CONTEXT } from './demo/engine.js';
+import { demo as mockDemo, DANA_CONTEXT } from './demo/engine.js';
+import { LiveDriver } from './demo/live.js';
 import { handleBankResults, sweepRisk, type PayerContext } from './loop.js';
+
+// PINCH_MODE=live drives the demo against the real sandbox (real object ids);
+// otherwise the payload-exact mock driver. Same DemoState shape either way.
+const LIVE = process.env.PINCH_MODE === 'live';
+const demo = LIVE ? new LiveDriver() : mockDemo;
+console.log(`[demo] driver = ${LIVE ? 'LIVE (real Pinch sandbox)' : 'MOCK (payload-exact)'}`);
 
 // payment-id → payer billing context (in-memory for demo; merchant DB in prod)
 const paymentContexts = new Map<string, PayerContext>();

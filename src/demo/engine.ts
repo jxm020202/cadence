@@ -31,6 +31,7 @@ export interface ApiCall {
 export interface ChatMsg { from: 'cadence' | 'payer'; text: string }
 
 export interface DemoState {
+  live: boolean;            // true => real sandbox calls; false => payload-exact mock
   scenario: 'nsf' | 'closed';
   step: number;
   stepName: string;
@@ -175,6 +176,7 @@ export class MockDriver {
     const dishonourType = closed ? 'account-closed' : 'insufficient-funds';
 
     const base: DemoState = {
+      live: false,
       scenario: this.scenario,
       step: s,
       stepName: ['setup', 'bank-date', closed ? 'gate-refusal' : 'consent', closed ? 'method-fixed' : 'payday'][s],
