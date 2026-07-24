@@ -102,6 +102,16 @@ demo.warm().then(() => console.log('[demo] model bridge warm')).catch((e) => con
 
 // the "drag the debit" spectacle beat: model risk at every candidate date
 let sweepCache: Record<string, number> | null = null;
+// merchant-facing dashboard: at-risk debits scored by the live model
+app.get('/api/merchant/dashboard', async (_req, res) => {
+  try {
+    const { merchantDashboard } = await import('./merchant.js');
+    res.json(await merchantDashboard());
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
+  }
+});
+
 app.get('/api/demo/sweep', async (_req, res) => {
   try {
     sweepCache ??= await sweepRisk(DANA_CONTEXT);
