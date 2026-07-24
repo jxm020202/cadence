@@ -23,10 +23,42 @@
 > 3. **A deterministic text parser** for interpreting a payer's SMS reply (dates/negation), no LLM.
 > 4. **A demo interface** showing the flow, and research/architecture notes.
 >
+> 5. **A Pinch API client** (OAuth, payers, payment sources, payments, webhook signature verification,
+>    CaptureJS), and supporting primitives — an append-only payment state log, idempotency keys, and a
+>    reconciliation helper. *(Don't omit this — "significant pieces of business logic" is an explicit
+>    disclosure example in the rules.)*
+>
 > None of it has processed a real payment; it all runs against the test environment. I'm treating all
 > of the above as prior art and will build the solution I submit during the official build window —
 > happy to be directed on what I should park or rebuild. I'm fine providing full repository access
 > including commit history/timestamps for verification at any point.
+
+### Form Q2 — "What will be built during the 48-hour Build Weekend?"
+
+> **The working product — none of it is connected end to end yet.**
+>
+> Concretely, during the window I'll build:
+>
+> 1. **The live recovery loop against the Pinch sandbox** — a deployed webhook endpoint registered with
+>    Pinch, receiving real `bank-results` events → dishonour-code gate → the model scores the candidate
+>    dates → the recovery payment created through the Pinch API with the consent receipt in its
+>    metadata. Today these are isolated pieces that have never run end to end; the demo is driven by
+>    mocked payloads.
+> 2. **The payer consent flow as an actual flow** — a real message going out, the reply captured and
+>    applied to the scheduled payment. The parser exists standalone but has never been connected to a
+>    payment.
+> 3. **The merchant-facing product** — a view of upcoming at-risk debits, recovered amounts, and the
+>    consent/audit trail per payment. None of this exists today; there's only a scripted demo page.
+> 4. **Replacing the mocked demo with the real integration**, so what's on screen are real
+>    payer/source/payment IDs from the sandbox rather than replayed payloads.
+> 5. The 60-second video and the submission itself.
+>
+> The model, parser, API client and ledger primitives go in as pre-built components. The solution being
+> judged gets built during the window — happy for that to be verified against commit history.
+
+**Why it's accurate (verified 24 Jul):** there is no live driver in the repo — every demo call is
+`mock: true`; the webhook→gate→model→recovery loop has never run end-to-end against the sandbox; there
+is no merchant-facing surface (only `public/demo.html`, a scripted stage); no SMS provider is wired.
 
 ---
 
