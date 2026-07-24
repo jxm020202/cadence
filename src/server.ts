@@ -50,6 +50,7 @@ app.post(
 );
 
 app.use(express.json());
+app.get('/', (_req, res) => res.redirect('/demo.html'));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // --- thin API over the Pinch client so the browser demo can drive it ---------

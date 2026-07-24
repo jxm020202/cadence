@@ -9,6 +9,19 @@ failure — picks the payer's likely-funded day and re-schedules the debit **thr
 (save-payment, Pinch's own designed-for mutation path). Default mode is the BECS-customary
 post-dishonour retry; pre-due-date re-timing only ships behind explicit payer opt-in.
 
+## Run it in 30 seconds
+```bash
+npm install
+cp .env.example .env      # add your Pinch TEST keys (app_test_/sk_test_/pk_test_)
+npm start                 # http://localhost:3000  → the recovery demo
+# PINCH_MODE=live npm start   # same demo, but driven by REAL sandbox calls (real pyr_/pmt_ ids)
+```
+**A judge's 60-second tour:**
+- **`/` → the recovery demo** — predict → dishonour → *type Dana's reply* (`"cant do friday, monday works"`) → a **real recovery payment** with a real `applicationFee`, consent receipt in metadata. The API pane shows every call; the badge shows **LIVE** vs mock.
+- **`/merchant.html`** — the operator view: this fortnight's debit run **risk-ranked by the live model**, with projected recovered $.
+- **What's real vs simulated (honesty contract):** payer, source, payment, recovery + `applicationFee` are **real sandbox calls**. The only thing labelled **SIMULATED** is the dishonour→settle *transition* — the sandbox batch won't process a scheduled BECS debit on demand (proven in `scripts/spike*.ts`; processed-list stays 0). We label it rather than fake it.
+- **Tests:** `npm test` — incl. the end-to-end `bank-results → gate → LightGBM → recovery` loop and the webhook signature verify. ML: `cd ml && uv run scripts/run_experiment.py`.
+
 ## ML results (disclosed-synthetic AU BECS ledger, held-out payers)
 | Retry strategy | Recovery rate | Recovered A$ (of $551k at risk) |
 |---|---|---|
