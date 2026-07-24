@@ -1,0 +1,12 @@
+# NEVER ship secrets into the image — host injects env vars at runtime
+.env
+.env.*
+
+node_modules
+ml/.venv
+ml/outputs
+dist
+.git
+*.log
+scripts/spike*.ts
+scripts/check-processed.ts
