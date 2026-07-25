@@ -19,7 +19,11 @@ export interface DebitRow {
 }
 export interface Dashboard {
   generatedNote: string;
-  summary: { activeMandates: number; thisRunAud: number; atRiskAud: number; projectedRecoveredAud: number };
+  summary: {
+    activeMandates: number; thisRunAud: number; atRiskAud: number; projectedRecoveredAud: number;
+    // cash-flow forecast — what the merchant actually collects, with vs without Cadence
+    expectedWithoutAud: number; expectedWithAud: number;
+  };
   rows: DebitRow[];
 }
 
@@ -65,13 +69,19 @@ export async function merchantDashboard(): Promise<Dashboard> {
   rows.sort((a, b) => b.risk - a.risk);
   const thisRun = rows.reduce((s, r) => s + r.amount, 0);
   const atRisk = rows.filter((r) => r.band !== 'low').reduce((s, r) => s + r.amount * r.risk, 0);
+  // expected collection = Σ amount × P(collect). Without Cadence: blind run.
+  // With Cadence: recover 46% (held-out model rate) of the expected-to-fail dollars.
+  const expectedWithout = rows.reduce((s, r) => s + r.amount * (1 - r.risk), 0);
+  const recovered = atRisk * 0.46;
   cache = {
     generatedNote: 'Illustrative portfolio; risk scores are live LightGBM model output.',
     summary: {
       activeMandates: rows.length,
       thisRunAud: Math.round(thisRun),
       atRiskAud: Math.round(atRisk),
-      projectedRecoveredAud: Math.round(atRisk * 0.46), // model recovery rate (held-out)
+      projectedRecoveredAud: Math.round(recovered),
+      expectedWithoutAud: Math.round(expectedWithout),
+      expectedWithAud: Math.round(expectedWithout + recovered),
     },
     rows,
   };

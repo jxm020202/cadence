@@ -36,6 +36,7 @@
     <h1><span class="c">Cadence</span> — this fortnight's debit run</h1>
     <div class="sub" id="sub">Loading live model scores…</div>
     <div class="cards" id="cards"></div>
+    <div id="forecast" style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:24px;font-size:15px"></div>
     <table>
       <thead><tr><th>Member</th><th>Amount</th><th>Due</th><th>Dishonour risk</th><th>Cadence action</th></tr></thead>
       <tbody id="rows"></tbody>
@@ -65,6 +66,12 @@
               <span class="pill ${r.band}">${Math.round(r.risk*100)}%</span></td>
           <td>${r.recommend}</td>
         </tr>`).join('');
+      const lift = s.expectedWithAud - s.expectedWithoutAud;
+      document.getElementById('forecast').innerHTML =
+        `<b>Cash-flow forecast</b> — projected collection this run: ` +
+        `<span style="color:var(--dim)">${money(s.expectedWithoutAud)} if you run it blind</span> ` +
+        `→ <b style="color:var(--green)">${money(s.expectedWithAud)} with Cadence</b> ` +
+        `<span style="color:var(--green)">(+${money(lift)})</span>`;
       document.getElementById('note').textContent = d.generatedNote;
     }).catch(e => { document.getElementById('sub').textContent = String(e); });
   </script>
