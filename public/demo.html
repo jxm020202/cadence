@@ -103,6 +103,7 @@
       </div>
       <div class="controls">
         <button class="primary" id="next">Run to bank date ▸</button>
+        <button id="autoplay" title="Hands-free run for screen-recording">▶ Auto-play</button>
         <button id="reset">Reset</button>
       </div>
     </div>
@@ -200,6 +201,21 @@
     const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     return r.json();
   }
+  // Hands-free run for screen-recording: hit ▶, narrate the 60s script, it drives itself.
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function autoplay() {
+    const ap = document.getElementById('autoplay');
+    ap.disabled = nextBtn.disabled = true;
+    try {
+      render(await post('/api/demo/reset', { scenario: 'nsf' })); await sleep(2600); // setup + risk score
+      render(await post('/api/demo/step'));                        await sleep(2600); // run to bank date → dishonour
+      render(await post('/api/demo/step'));                        await sleep(2400); // model plans + asks
+      render(await post('/api/demo/reply', { text: 'cant do friday, monday works' })); await sleep(3200); // typed consent → recovery
+      render(await post('/api/demo/step'));                        // settle + recovered $
+    } finally { ap.disabled = false; }
+  }
+  document.getElementById('autoplay').addEventListener('click', autoplay);
+
   nextBtn.addEventListener('click', async () => render(await post('/api/demo/step')));
   document.getElementById('reset').addEventListener('click', async () => render(await post('/api/demo/reset')));
   document.getElementById('scNsf').addEventListener('click', async () => render(await post('/api/demo/reset', { scenario: 'nsf' })));
