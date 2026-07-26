@@ -16,16 +16,27 @@
 > *(screen: merchant view)* And the operator's view: this fortnight's run, every debit risk-scored, recovered dollars projected.
 > Real model, real Pinch integration, built this weekend. **Cadence — a bounced debit becomes a recovered dollar.**
 
-## Shot list (what to click while you talk)
-1. **0–8s** — your face or a title card: the problem line.
-2. **8–40s** — screen-record `http://localhost:3000` (demo): show the risk %, click "run to bank date" (red dishonour), **type** `cant do friday, monday works` in the phone box → recovery payment appears with a **real `pmt_` id + `applicationFee`** (point at the LIVE badge + the API pane).
-3. **40–52s** — `http://localhost:3000/merchant.html`: the risk-ranked debit run + recovered-$ cards.
-4. **52–60s** — close line to camera.
+## The 60-second script (SILENT recovery — the clean story)
+> Every fortnight, millions of Australian gym debits bounce — usually just insufficient funds, a few days
+> before payday. The member isn't broke; they're short for three days. The old billers retry blindly,
+> charge a $30 fee, and ping the member "your payment failed" — which is how gyms lose members who never
+> meant to leave.
+> *(demo)* Cadence is different. Our model scores every scheduled debit — this one, likely to bounce, lands
+> before her payday. It bounces. And Cadence **silently re-times the retry to her payday** — no message, no
+> fee. On payday it clears: **$45 recovered, through Pinch's own API**, our 15% as an applicationFee — and
+> **she never knew it failed, so she stays.**
+> *(merchant view)* Across the whole book: every debit risk-scored, recovered dollars projected.
+> Real model, real Pinch integration. **Cadence — recover the payment quietly, and keep the member.**
 
-**Easiest recording path — zero fumbling:** run `PINCH_MODE=live npm start`, open http://localhost:3000,
-hit the **▶ Auto-play** button, and narrate the script while it drives itself (dishonour → typed
-consent → recovered $ → transfer split, ~13s). No clicking or typing to trip on. Then flip to
-`/merchant.html` for the last beat. (Live mode shows the green **LIVE — real Pinch sandbox** badge + real ids.)
+## Shot list (what's on screen while you talk)
+1. **0–10s** — face or title card: the problem line.
+2. **10–42s** — `http://localhost:3000`: hit **▶ Auto-play** → risk score → **DISHONOURED** (red) → **silently re-timed to payday** → **SETTLED $45** (point at the LIVE badge, the real `pmt_` id + applicationFee in the API pane).
+3. **42–54s** — `http://localhost:3000/merchant.html`: the risk-ranked run + "$359 → $442 with Cadence".
+4. **54–60s** — close line.
+
+**Zero fumbling:** run `PINCH_MODE=live npm start`, open http://localhost:3000, hit **▶ Auto-play** and
+narrate while it drives itself (bounce → silent re-time → recovered $ → transfer split, ~12s). **No typing.**
+Then flip to `/merchant.html` for the last beat. (Green **LIVE — real Pinch sandbox** badge + real ids.)
 
 ## First-submission form answers (form: getpinch.com.au/hackathon-first-submission)
 - **Team name:** `Cadence`

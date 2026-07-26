@@ -97,13 +97,10 @@ export class MockDriver {
   async advance(): Promise<DemoState> {
     if (this.step < 3) this.step += 1;
     await this.warm();
-    if (this.step === 2) {
-      if (this.scenario === 'nsf') {
-        this.chat = [{ from: 'cadence', text: this.plan?.consentAsk ?? '' }];
-      } else {
-        this.chat = [{ from: 'cadence', text: 'Your account came back closed, so we won\'t re-debit it. Here\'s a secure link to set up a new payment method: pinch.link/dana-update' }];
-      }
+    if (this.step === 2 && this.scenario === 'closed') {
+      this.chat = [{ from: 'cadence', text: 'Your account came back closed, so we won\'t re-debit it. Here\'s a secure link to set up a new payment method: pinch.link/dana-update' }];
     }
+    // nsf default is SILENT — no message; the retry is re-timed to payday automatically.
     return this.render();
   }
 
@@ -184,7 +181,7 @@ export class MockDriver {
       payer: { id: PAYER_ID, name: 'Dana', plan: 'Gym membership — $45.00 fortnightly (BECS direct debit)' },
       payments: [],
       chat: this.chat,
-      canReply: s >= 2 && !(this.consent && ['opt-out', 'hardship'].includes(this.consent.action)) && s < 3,
+      canReply: false, // silent default — recovery re-times automatically, no member typing
       recoveredAud: 0,
       calls: [],
       done: s >= 3,
@@ -234,22 +231,18 @@ export class MockDriver {
         return base;
       }
       const settleP = this.plan?.retryScores?.[String(retryDay)];
-      const overridden = this.consent?.action === 'overridden';
-      base.narration = overridden
-        ? `Dana chose her own day — parsed deterministically, receipt stamped into metadata. Her words ARE the audit trail.`
-        : `Cadence gates the code (retryable), scores all 14 candidate days, picks day +${retryDay} — and ASKS. The model’s day is the default; Dana’s reply can override it. Type as Dana below.`;
+      base.narration = `Insufficient funds — but Dana has money on payday. Cadence silently re-times the retry to day +${retryDay} (her likely payday). No message, no fee — she never knows it failed.`;
       base.payments = [
-        { id: PAY_A, amount: 45, date: THU_14, status: 'dishonoured', note: 'insufficient-funds' },
+        { id: PAY_A, amount: 45, date: THU_14, status: 'dishonoured', note: 'insufficient-funds — short for a few days' },
         { id: PAY_B, amount: 45, date: retryDate, status: 'scheduled',
-          risk: !overridden && settleP != null ? 1 - settleP : undefined,
-          note: overridden ? `payer-chose (receipt in metadata)` : `model-timed: day +${retryDay} · awaiting reply` },
+          risk: settleP != null ? 1 - settleP : undefined,
+          note: `silently re-timed to payday (day +${retryDay})` },
       ];
       base.calls = [
         this.modelCall()!,
         { method: 'POST', path: '/payments', mock: true,
-          body: { payerId: PAYER_ID, amount: 4500, transactionDate: this.dateAfterFail(retryDay), description: 'Gym membership (recovery)', metadata: `model-timed day+${retryDay}; consent: pending payer reply`, applicationFee: feeCents },
+          body: { payerId: PAYER_ID, amount: 4500, transactionDate: this.dateAfterFail(retryDay), description: 'Gym membership (recovery)', metadata: `silent re-time to payday (day+${retryDay})`, applicationFee: feeCents },
           response: { id: PAY_B, status: 'scheduled' } },
-        ...this.extraCalls,
       ];
       return base;
     }
@@ -267,16 +260,16 @@ export class MockDriver {
     const settleTT = `${retryDate}T09:00:00Z`;
     const recovered = 45;
     const fee = feeCents / 100;
-    base.narration = 'The chosen day arrives. SETTLED — and the transfer reconciles everything on Pinch’s rails: $45.00 recovered, Cadence’s 15% as applicationFee, net to the gym. We earn only because the payment landed.';
+    base.narration = 'Payday arrives — the retry clears. SETTLED: $45 recovered, and Dana never hit a “payment failed” moment, so she stays. The transfer reconciles on Pinch’s rails: $45.00 recovered, Cadence’s 15% ($6.75) as applicationFee, net to the gym. We earn only because it landed.';
     base.payments = [
       { id: PAY_A, amount: 45, date: THU_14, status: 'dishonoured', note: 'insufficient-funds' },
-      { id: PAY_B, amount: 45, date: retryDate, status: 'settled', note: this.consent?.action === 'overridden' ? 'recovered on Dana’s chosen day' : `recovered on model-timed day +${retryDay}` },
+      { id: PAY_B, amount: 45, date: retryDate, status: 'settled', note: `recovered silently on payday (day +${retryDay})` },
     ];
     base.feeSplit = { recovered, cadenceFee: fee, netToMerchant: recovered - fee };
     base.recoveredAud = recovered;
     base.calls = [
       { method: 'GET', path: `/payments/${PAY_B}`, mock: true, headers: { 'Time-Travel': settleTT },
-        response: { id: PAY_B, status: 'settled', amount: 4500, transactionDate: retryDate, metadata: this.consent?.receipt ?? `model-timed day+${retryDay}; consent: no objection` } },
+        response: { id: PAY_B, status: 'settled', amount: 4500, transactionDate: retryDate, metadata: `silent re-time to payday (day+${retryDay})` } },
       { method: 'GET', path: '/events?type=transfer', mock: true, headers: { 'Time-Travel': settleTT },
         response: {
           Id: 'evt_demo_transfer_1', Type: 'transfer', EventDate: settleTT,

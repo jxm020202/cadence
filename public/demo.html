@@ -77,7 +77,7 @@
   <div class="grid">
     <div class="card">
       <div class="scenarios">
-        <button id="scNsf" class="active">Scenario: insufficient funds</button>
+        <button id="scNsf" class="active">Silent recovery</button>
         <button id="scClosed">Scenario: account closed (the gate)</button>
       </div>
       <div class="payer">
@@ -207,10 +207,9 @@
     const ap = document.getElementById('autoplay');
     ap.disabled = nextBtn.disabled = true;
     try {
-      render(await post('/api/demo/reset', { scenario: 'nsf' })); await sleep(2600); // setup + risk score
-      render(await post('/api/demo/step'));                        await sleep(2600); // run to bank date → dishonour
-      render(await post('/api/demo/step'));                        await sleep(2400); // model plans + asks
-      render(await post('/api/demo/reply', { text: 'cant do friday, monday works' })); await sleep(3200); // typed consent → recovery
+      render(await post('/api/demo/reset', { scenario: 'nsf' })); await sleep(2900); // setup + risk score
+      render(await post('/api/demo/step'));                        await sleep(2700); // run to bank date → dishonour
+      render(await post('/api/demo/step'));                        await sleep(3000); // SILENT re-time to payday
       render(await post('/api/demo/step'));                        // settle + recovered $
     } finally { ap.disabled = false; }
   }

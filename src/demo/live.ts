@@ -101,13 +101,38 @@ export class LiveDriver {
       }
     }
 
-    // Step 2 — model plans; Cadence asks (or the gate refuses).
+    // Step 2 — SILENT default: re-time the retry to the model's payday via the
+    // API, no member contact. (Closed account → the gate refuses instead.)
     if (this.step === 2) {
-      this.chat = this.scenario === 'closed'
-        ? [{ from: 'cadence', text: 'Your account came back closed, so we won’t re-debit it. Here’s a secure link to set up a new payment method.' }]
-        : [{ from: 'cadence', text: this.plan?.consentAsk ?? '' }];
+      if (this.scenario === 'closed') {
+        this.chat = [{ from: 'cadence', text: 'Your account came back closed, so we won’t re-debit it. Here’s a secure link to set up a new payment method.' }];
+      } else {
+        await this.createRecovery();
+      }
     }
     return this.render();
+  }
+
+  /** Silently re-time the retry to the model's payday and create the recovery
+   * payment via save-payment (real, mock:false). No member message. */
+  private async createRecovery(): Promise<void> {
+    if (this.recoveryId || !this.plan) return;
+    const modelDay = this.plan.bestRetryDay ?? 2;
+    const when = iso(addDays(new Date(), modelDay));
+    try {
+      const rec = await Pinch.savePayment({
+        payerId: this.payerId, amount: DANA_CONTEXT.amount * 100, transactionDate: when,
+        description: 'Gym membership (Cadence silent re-time)',
+        metadata: `silent re-time to payday (model day+${modelDay}); no member contact`,
+        applicationFee: feeCents,
+      }) as { id: string; status: string };
+      this.recoveryId = rec.id;
+      this.extraCalls = [{ method: 'POST', path: '/payments', mock: false,
+        body: { payerId: this.payerId, amount: 4500, transactionDate: when, metadata: 'silent re-time to payday', applicationFee: feeCents },
+        response: { id: rec.id, status: rec.status } }];
+    } catch (e) {
+      this.extraCalls = [{ method: 'ERROR', path: 'create recovery', mock: false, response: { error: String(e) } }];
+    }
   }
 
   /** Judge types Dana's reply → real parser → REAL recovery payment via save-payment. */
@@ -162,7 +187,7 @@ export class LiveDriver {
       narration: '', payer: { id: this.payerId || '(creating…)', name: 'Dana',
         plan: 'Gym membership — $45.00 fortnightly (BECS direct debit) · LIVE sandbox' },
       payments: [], chat: this.chat,
-      canReply: s >= 2 && s < 3 && !(this.consent && ['opt-out', 'hardship'].includes(this.consent.action)),
+      canReply: false, // silent default — recovery re-times automatically, no member typing
       recoveredAud: 0, calls: [], done: s >= 3,
     };
 
@@ -184,13 +209,12 @@ export class LiveDriver {
       return base;
     }
     if (s === 2) {
-      const overridden = this.consent?.action === 'overridden';
       base.narration = closed
         ? 'The gate refuses to retry a dead account — even if the payer offers a date. It sends a real Payment Link to fix the method instead.'
-        : `Cadence gates the code, the model picks day +${retryDay}, and it ASKS. Type as Dana — her reply creates a REAL recovery payment via save-payment.`;
-      const rows: Row[] = [debitRow('dishonoured', 'insufficient-funds')];
-      if (this.recoveryId) rows.push({ id: this.recoveryId, amount: 45, date: this.consent?.retryDate ?? this.failDate,
-        status: 'scheduled', note: overridden ? `payer-chose · real id ${this.recoveryId}` : `model-timed · real id ${this.recoveryId}` });
+        : `Insufficient funds — but Dana has money on payday. Cadence silently re-times the retry to day +${retryDay} via Pinch’s API — no message, no fee. Recovery ${this.recoveryId || '…'} scheduled.`;
+      const rows: Row[] = [debitRow('dishonoured', 'insufficient-funds — short for a few days')];
+      if (this.recoveryId) rows.push({ id: this.recoveryId, amount: 45, date: iso(addDays(new Date(), retryDay)),
+        status: 'scheduled', note: `silently re-timed to payday · real id ${this.recoveryId}` });
       base.payments = rows;
       base.calls = [scoreCall, ...this.extraCalls];
       return base;
@@ -202,16 +226,16 @@ export class LiveDriver {
       base.calls = this.extraCalls;
       return base;
     }
-    base.narration = `Recovery ${this.recoveryId || '(pending reply)'} is a real sandbox payment with a real applicationFee ($${(feeCents / 100).toFixed(2)}) and the consent receipt in metadata. Settlement itself is SIMULATED — the sandbox batch won’t settle on demand.`;
+    base.narration = `On payday the retry clears. Recovery ${this.recoveryId || '(pending)'} is a real sandbox payment with a real applicationFee ($${(feeCents / 100).toFixed(2)}) — $45 recovered, and Dana never knew it failed, so she stays. (Settlement itself is SIMULATED — the sandbox batch won’t settle on demand.)`;
     base.payments = [
       debitRow('dishonoured', 'insufficient-funds'),
-      { id: this.recoveryId || 'pmt_(pending)', amount: 45, date: this.consent?.retryDate ?? this.failDate, status: 'settled', note: 'recovered · settle SIMULATED' },
+      { id: this.recoveryId || 'pmt_(pending)', amount: 45, date: iso(addDays(new Date(), retryDay)), status: 'settled', note: 'recovered silently on payday · settle SIMULATED' },
     ];
     base.feeSplit = { recovered: 45, cadenceFee: feeCents / 100, netToMerchant: 45 - feeCents / 100 };
     base.recoveredAud = 45;
     base.calls = [{ method: 'GET', path: `/payments/${this.recoveryId}`, mock: true,
       headers: { 'Time-Travel': 'SIMULATED settlement — sandbox batch not caller-triggerable' },
-      response: { id: this.recoveryId, status: 'settled', applicationFee: feeCents, metadata: this.consent?.receipt } }];
+      response: { id: this.recoveryId, status: 'settled', applicationFee: feeCents, metadata: 'silent re-time to payday' } }];
     return base;
   }
 }
