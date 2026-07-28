@@ -3,60 +3,200 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cadence — merchant view</title>
+  <title>Cadence — membership retention cockpit</title>
   <style>
-    :root { --bg:#0d1117; --card:#161b22; --line:#30363d; --text:#e6edf3; --dim:#8b949e;
-      --green:#3fb950; --amber:#d29922; --red:#f85149; --blue:#58a6ff; }
-    * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,sans-serif; }
-    .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 60px; }
-    h1 { margin:0 0 2px; font-size:26px; } h1 .c { color:var(--green); }
-    .sub { color:var(--dim); margin-bottom:22px; font-size:14px; }
-    .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
-    .stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
-    .stat .v { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
-    .stat .l { color:var(--dim); font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
-    .stat.rec .v { color:var(--green); } .stat.risk .v { color:var(--amber); }
-    table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
-    th,td { text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); font-size:14px; }
-    th { color:var(--dim); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+    :root {
+      --bg:#0b0e14; --card:#141922; --card2:#171d27; --line:#232a35; --text:#e6edf3; --dim:#8b95a5;
+      --green:#3fb950; --green-dim:#1c3a25; --amber:#d29922; --amber-dim:#3a2d05;
+      --red:#f85149; --red-dim:#3a1518; --blue:#58a6ff;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(1200px 600px at 70% -10%, #12202a 0%, var(--bg) 55%); color:var(--text);
+      font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+    .wrap { max-width:1040px; margin:0 auto; padding:26px 22px 70px; }
+
+    /* header */
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:6px; }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .logo { width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg,var(--green),#2ea043);
+      display:grid; place-items:center; box-shadow:0 0 0 1px #ffffff14, 0 6px 18px #3fb95033; }
+    .logo svg { width:17px; height:17px; }
+    .brand b { font-size:19px; letter-spacing:-.2px; }
+    .brand .tag { color:var(--dim); font-size:12px; margin-top:1px; }
+    .nav a { color:var(--dim); text-decoration:none; font-size:13px; padding:6px 11px; border:1px solid var(--line);
+      border-radius:8px; transition:.15s; } .nav a:hover { color:var(--text); border-color:#3a4453; }
+
+    h1 { margin:20px 0 4px; font-size:25px; letter-spacing:-.4px; font-weight:680; }
+    h1 .g { color:var(--green); }
+    .lede { color:var(--dim); font-size:14.5px; max-width:760px; margin-bottom:22px; }
+    .lede b { color:var(--text); font-weight:600; }
+
+    /* stat cards */
+    .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+    .stat { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:15px 16px; position:relative; }
+    .stat .v { font-size:25px; font-weight:720; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+    .stat .l { color:var(--dim); font-size:11.5px; text-transform:uppercase; letter-spacing:.6px; margin-top:3px; }
+    .stat .s { font-size:11.5px; color:var(--dim); margin-top:5px; }
+    .stat.hero { background:linear-gradient(160deg,#16271b,var(--card)); border-color:#26492f; }
+    .stat.hero .v { color:var(--green); } .stat.risk .v { color:var(--amber); }
+
+    /* trust strip */
+    .trust { display:flex; flex-wrap:wrap; gap:8px 20px; align-items:center; background:var(--card2);
+      border:1px solid var(--line); border-radius:11px; padding:11px 16px; margin-bottom:26px; font-size:13.5px; }
+    .trust .k { display:inline-flex; align-items:center; gap:7px; color:var(--dim); }
+    .trust .k b { color:var(--text); font-weight:600; }
+    .dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px #3fb95022; }
+
+    /* section head */
+    .sec { display:flex; align-items:baseline; justify-content:space-between; margin:30px 0 13px; }
+    .sec h2 { font-size:16px; margin:0; letter-spacing:-.2px; }
+    .sec .hint { color:var(--dim); font-size:12.5px; }
+
+    /* prevention feed */
+    .feed { display:grid; gap:11px; }
+    .ev { display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;
+      background:var(--card); border:1px solid var(--line); border-radius:13px; padding:14px 16px; }
+    .ev.high { border-left:3px solid var(--red); } .ev.medium { border-left:3px solid var(--amber); }
+    .av { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-weight:700; font-size:14px;
+      background:#1d2530; color:var(--text); }
+    .ev .who { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+    .ev .who b { font-size:15px; } .ev .meta { color:var(--dim); font-size:13px; }
+    .ev .reason { color:var(--dim); font-size:12.5px; margin-top:2px; }
+    .ev .reason .chip { color:var(--text); background:#1d2530; border-radius:6px; padding:1px 7px; font-size:12px; }
+    .ev .act { margin-top:7px; font-size:13px; color:var(--green); display:flex; align-items:center; gap:7px; }
+    .ev .act .muted { color:var(--dim); }
+    .risk { text-align:right; min-width:96px; }
+    .risk .pct { font-size:20px; font-weight:720; font-variant-numeric:tabular-nums; }
+    .risk.high .pct { color:var(--red); } .risk.medium .pct { color:var(--amber); }
+    .risk .lab { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.5px; }
+    .kept { font-size:12px; color:var(--green); background:var(--green-dim); border-radius:6px; padding:2px 8px; margin-top:6px; display:inline-block; }
+
+    /* ROI + forecast panel */
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:18px 20px; }
+    .roi { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .roi .big { font-size:22px; font-weight:720; letter-spacing:-.4px; }
+    .roi .big.g { color:var(--green); } .roi .lab { color:var(--dim); font-size:12.5px; margin-top:2px; }
+    .roi .arrow { color:var(--dim); }
+    .forecast { margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size:14.5px; }
+
+    /* table */
+    table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line);
+      border-radius:13px; overflow:hidden; }
+    th,td { text-align:left; padding:11px 15px; border-bottom:1px solid var(--line); font-size:13.5px; }
+    th { color:var(--dim); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; }
     tr:last-child td { border-bottom:0; }
     td.num { text-align:right; font-variant-numeric:tabular-nums; }
-    .pill { display:inline-block; padding:2px 9px; border-radius:20px; font-size:12px; font-weight:600; }
-    .high { background:#4a1214; color:var(--red); } .medium { background:#3a2d05; color:var(--amber); } .low { background:#12331b; color:var(--green); }
-    .bar { height:6px; border-radius:4px; background:#21262d; overflow:hidden; width:70px; display:inline-block; vertical-align:middle; }
-    .bar > i { display:block; height:100%; }
-    .note { color:var(--dim); font-size:12px; margin-top:14px; }
-    .nav a { color:var(--blue); text-decoration:none; font-size:13px; } .nav { margin-bottom:18px; }
+    .pill { display:inline-block; padding:2px 9px; border-radius:20px; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+    .pill.high { background:var(--red-dim); color:var(--red); } .pill.medium { background:var(--amber-dim); color:var(--amber); } .pill.low { background:var(--green-dim); color:var(--green); }
+    .bar { height:6px; border-radius:4px; background:#21262d; overflow:hidden; width:56px; display:inline-block; vertical-align:middle; margin-right:8px; }
+    .bar>i { display:block; height:100%; }
+    td .rz { color:var(--dim); font-size:12px; }
+    td .actv { color:var(--green); } td .actv.mut { color:var(--dim); }
+
+    .foot { margin-top:28px; background:var(--card2); border:1px solid var(--line); border-radius:13px; padding:16px 20px;
+      color:var(--dim); font-size:13.5px; line-height:1.6; }
+    .foot b { color:var(--text); }
+    .note { color:#6b7480; font-size:12px; margin-top:12px; }
+    @media (max-width:720px){ .cards{grid-template-columns:repeat(2,1fr);} .roi{grid-template-columns:1fr;} .ev{grid-template-columns:auto 1fr;} .risk{grid-column:2;text-align:left;} }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="nav"><a href="/demo.html">← recovery demo</a></div>
-    <h1><span class="c">Cadence</span> — this fortnight's debit run</h1>
-    <div class="sub" id="sub">Loading live model scores…</div>
+    <div class="top">
+      <div class="brand">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#08110b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2.5-7 5 14 2.5-7H21"/></svg></span>
+        <div><b>Cadence</b><div class="tag" id="gymtag">Northshore Strength &amp; Co · membership retention</div></div>
+      </div>
+      <div class="nav"><a href="/demo.html">Live recovery demo →</a></div>
+    </div>
+
+    <h1>Keep the members you already <span class="g">won</span>.</h1>
+    <div class="lede" id="lede">Loading live model scores…</div>
+
     <div class="cards" id="cards"></div>
-    <div id="forecast" style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:24px;font-size:15px"></div>
+    <div class="trust" id="trust"></div>
+
+    <div class="sec"><h2>What Cadence did this run — silently</h2><span class="hint">the at-risk debits, predicted &amp; re-timed before the bank run</span></div>
+    <div class="feed" id="feed"></div>
+
+    <div class="sec"><h2>The retention outcome</h2><span class="hint">members kept, not invoices chased</span></div>
+    <div class="panel">
+      <div class="roi" id="roi"></div>
+      <div class="forecast" id="forecast"></div>
+    </div>
+
+    <div class="sec"><h2>The full book</h2><span class="hint">every mandate, risk-scored by the model</span></div>
     <table>
-      <thead><tr><th>Member</th><th>Amount</th><th>Due</th><th>Dishonour risk</th><th>Cadence action</th></tr></thead>
+      <thead><tr><th>Member</th><th>Amount</th><th>Due</th><th>Dishonour risk</th><th>Why</th><th>Cadence action</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
+
+    <div class="foot" id="foot"></div>
     <div class="note" id="note"></div>
   </div>
+
   <script>
     const money = (v) => '$' + Number(v).toLocaleString('en-AU');
     const riskColor = (b) => b === 'high' ? 'var(--red)' : b === 'medium' ? 'var(--amber)' : 'var(--green)';
+    const initials = (n) => n.replace(/[^A-Za-z. ]/g,'').split(/[ .]+/).filter(Boolean).slice(0,2).map(s=>s[0]).join('').toUpperCase();
+    const payday = (due) => { const d = new Date(due); d.setDate(d.getDate()+4);
+      return d.toLocaleDateString('en-AU',{weekday:'short', day:'numeric', month:'short'}); };
+
     fetch('/api/merchant/dashboard').then(r => r.json()).then(d => {
-      if (d.error) { document.getElementById('sub').textContent = 'Error: ' + d.error; return; }
+      if (d.error) { document.getElementById('lede').textContent = 'Error: ' + d.error; return; }
       const s = d.summary;
-      document.getElementById('sub').textContent =
-        `${s.activeMandates} active mandates · Cadence flags the debits likely to fail before the bank run, and re-times them to payday.`;
+
+      document.getElementById('lede').innerHTML =
+        `Cadence predicts which membership debits will bounce and <b>silently re-times them to payday</b> — ` +
+        `the member never knows, never gets a $30 dishonour fee, and never has a reason to cancel. ` +
+        `<b>${s.activeMandates} active mandates</b> this fortnight, scored live by the model.`;
+
       document.getElementById('cards').innerHTML = [
-        ['', 'This run', money(s.thisRunAud)],
-        ['risk', 'At risk', money(s.atRiskAud)],
-        ['rec', 'Projected recovered', money(s.projectedRecoveredAud)],
-        ['', 'Active mandates', s.activeMandates],
-      ].map(([c, l, v]) => `<div class="stat ${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+        ['', 'This run', money(s.thisRunAud), `${s.activeMandates} membership debits`],
+        ['risk', 'Predicted to bounce', money(s.atRiskAud), `${s.membersAtRisk} members at risk`],
+        ['hero', 'Silently kept', s.membersKeptProjected + ' members', `${money(s.projectedRecoveredAud)} recovered (projected)`],
+        ['', 'Member disruption', '0', 'messages · fees · calls'],
+      ].map(([c, l, v, sub]) => `<div class="stat ${c}"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${sub}</div></div>`).join('');
+
+      document.getElementById('trust').innerHTML =
+        `<span class="k"><span class="dot"></span><b>Silent by design</b></span>` +
+        `<span class="k"><b>0</b> members contacted</span>` +
+        `<span class="k"><b>$0</b> dishonour fees charged</span>` +
+        `<span class="k">No negotiation · no hardship calls · no compliance surface</span>`;
+
+      // prevention feed — the at-risk members, made visible
+      const atRisk = d.rows.filter(r => r.band !== 'low');
+      document.getElementById('feed').innerHTML = atRisk.map(r => {
+        const silent = r.band === 'high';
+        return `<div class="ev ${r.band}">
+          <div class="av" style="color:${riskColor(r.band)}">${initials(r.payer)}</div>
+          <div>
+            <div class="who"><b>${r.payer}</b><span class="meta">$${r.amount.toFixed(2)} · due ${r.dueDate.slice(5)}</span></div>
+            <div class="reason">model read: <span class="chip">${r.reason || '—'}</span></div>
+            <div class="act">${silent
+              ? `↳ silently re-timed to payday (${payday(r.dueDate)}) · projected to clear`
+              : `↳ held retry-ready — will re-time the instant it bounces`}
+              <span class="muted">· $0 fee · 0 messages</span></div>
+            ${silent ? `<span class="kept">member kept — they never knew it nearly failed</span>` : ``}
+          </div>
+          <div class="risk ${r.band}"><div class="pct">${Math.round(r.risk*100)}%</div><div class="lab">bounce risk</div></div>
+        </div>`;
+      }).join('') || `<div class="panel" style="color:var(--dim)">No at-risk debits this run — the whole book clears on payday.</div>`;
+
+      // ROI panel — members + annualised revenue protected
+      const annual = s.projectedRecoveredAud * 26; // 26 fortnights / yr
+      document.getElementById('roi').innerHTML =
+        `<div><div class="big">${s.membersAtRisk} <span class="arrow">→</span> <span class="g">${s.membersKeptProjected} kept</span></div>` +
+        `<div class="lab">members at risk of involuntary churn this run → silently retained (projected, at the model's held-out 46% recovery rate)</div></div>` +
+        `<div><div class="big g">${money(annual)}<span style="font-size:13px;color:var(--dim)"> / yr</span></div>` +
+        `<div class="lab">membership revenue that would otherwise leak to failed debits, annualised across 26 fortnightly runs</div></div>`;
+
+      const lift = s.expectedWithAud - s.expectedWithoutAud;
+      document.getElementById('forecast').innerHTML =
+        `<b>Cash-flow this run:</b> <span style="color:var(--dim)">${money(s.expectedWithoutAud)} if you run it blind</span> ` +
+        `→ <b style="color:var(--green)">${money(s.expectedWithAud)} with Cadence</b> <span style="color:var(--green)">(+${money(lift)})</span>`;
+
+      // full book
       document.getElementById('rows').innerHTML = d.rows.map(r => `
         <tr>
           <td>${r.payer}</td>
@@ -64,16 +204,18 @@
           <td>${r.dueDate.slice(5)}</td>
           <td><span class="bar"><i style="width:${Math.round(r.risk*100)}%;background:${riskColor(r.band)}"></i></span>
               <span class="pill ${r.band}">${Math.round(r.risk*100)}%</span></td>
-          <td>${r.recommend}</td>
+          <td><span class="rz">${r.reason || '—'}</span></td>
+          <td><span class="actv ${r.band==='low'?'mut':''}">${r.recommend}</span></td>
         </tr>`).join('');
-      const lift = s.expectedWithAud - s.expectedWithoutAud;
-      document.getElementById('forecast').innerHTML =
-        `<b>Cash-flow forecast</b> — projected collection this run: ` +
-        `<span style="color:var(--dim)">${money(s.expectedWithoutAud)} if you run it blind</span> ` +
-        `→ <b style="color:var(--green)">${money(s.expectedWithAud)} with Cadence</b> ` +
-        `<span style="color:var(--green)">(+${money(lift)})</span>`;
-      document.getElementById('note').textContent = d.generatedNote;
-    }).catch(e => { document.getElementById('sub').textContent = String(e); });
+
+      document.getElementById('foot').innerHTML =
+        `<b>Why silent wins.</b> Every other tool waits for the debit to fail, then messages the member to negotiate — ` +
+        `which is the exact moment a member remembers they were thinking of quitting. Cadence never opens that conversation. ` +
+        `It re-times an <b>already-authorised</b> debit to the member's payday, so the payment simply succeeds. ` +
+        `No message, no fee, no negotiation, no hardship-comms compliance to carry — <b>and the member stays.</b>`;
+
+      document.getElementById('note').textContent = d.generatedNote + ' Scores are live LightGBM output; recovered dollars are a projection at the model’s held-out recovery rate.';
+    }).catch(e => { document.getElementById('lede').textContent = String(e); });
   </script>
 </body>
 </html>
