@@ -1,13 +1,14 @@
 /**
- * Demo engine: FUSED Cadence — predict-then-ask.
+ * Demo engine: Cadence — predict, then SILENTLY prevent.
  *
  * Two scenarios, one loop:
- *  - 'nsf' (default): model prices the debit → dishonour → model picks the
- *    funded day + consent SMS → payer can CONFIRM or OVERRIDE by typing →
- *    receipt stamped into metadata, Cadence's 15% as applicationFee →
- *    time-travel settle with the split reconciled in transfer line-items.
- *  - 'closed': account-closed → the GATE refuses to retry — even when the
- *    payer offers a date — and sends a Payment Link to fix the method.
+ *  - 'nsf' (default): model prices the debit → dishonour → Cadence SILENTLY
+ *    re-times the retry to the model's payday via save-payment (a
+ *    re-presentation under the existing mandate — no member contact) →
+ *    Cadence's 15% as applicationFee → time-travel settle with the split
+ *    reconciled in transfer line-items.
+ *  - 'closed': account-closed → the GATE refuses to retry — the ONLY path
+ *    that ever contacts the member: a one-way Payment Link to fix the method.
  *
  * Honesty contract: payloads are labelled MOCK until sandbox keys land; the
  * model (SCORE) and the parser (PARSE) calls are REAL — same code path as the
@@ -176,7 +177,7 @@ export class MockDriver {
       live: false,
       scenario: this.scenario,
       step: s,
-      stepName: ['setup', 'bank-date', closed ? 'gate-refusal' : 'consent', closed ? 'method-fixed' : 'payday'][s],
+      stepName: ['setup', 'bank-date', closed ? 'gate-refusal' : 'silent-retime', closed ? 'method-fixed' : 'payday'][s],
       narration: '',
       payer: { id: PAYER_ID, name: 'Dana', plan: 'Gym membership — $45.00 fortnightly (BECS direct debit)' },
       payments: [],
@@ -221,7 +222,7 @@ export class MockDriver {
 
     if (s === 2) {
       if (closed) {
-        base.narration = 'The gate rules: NEVER retry a dead account — no date can fix it. Cadence sends a secure Payment Link to update the method instead. (Try typing “try friday” — watch it refuse.)';
+        base.narration = 'The gate rules: NEVER retry a dead account — no date can fix it. Cadence sends a secure Payment Link to update the method instead. This is the ONLY time Cadence ever contacts the member — a one-way notice, never a negotiation.';
         base.payments = [{ id: PAY_A, amount: 45, date: THU_14, status: 'refused', note: 'hard code — retry forbidden by gate' }];
         base.calls = [
           this.modelCall()!,

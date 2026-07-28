@@ -7,8 +7,9 @@
  * BECS payment to dishonoured/settled (proven in scripts/spike*.ts: processed
  * list stays 0) — is the ONLY thing left labelled SIMULATED. So on stage:
  * real payer, real source, real dishonoured-debit object, real model-timed
- * recovery payment with a real applicationFee + consent receipt in metadata;
- * only the two state transitions are replayed, and they say so.
+ * SILENT recovery payment (re-timed to payday, no member contact) with a real
+ * applicationFee, the silent re-time noted in metadata; only the two state
+ * transitions are replayed, and they say so.
  *
  * PINCH_MODE=live selects this driver in server.ts.
  */
@@ -183,7 +184,7 @@ export class LiveDriver {
     const base: DemoState = {
       live: true,
       scenario: this.scenario, step: s,
-      stepName: ['setup', 'bank-date', closed ? 'gate-refusal' : 'consent', closed ? 'method-fixed' : 'settle'][s],
+      stepName: ['setup', 'bank-date', closed ? 'gate-refusal' : 'silent-retime', closed ? 'method-fixed' : 'settle'][s],
       narration: '', payer: { id: this.payerId || '(creating…)', name: 'Dana',
         plan: 'Gym membership — $45.00 fortnightly (BECS direct debit) · LIVE sandbox' },
       payments: [], chat: this.chat,

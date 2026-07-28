@@ -107,7 +107,7 @@
         <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#08110b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2.5-7 5 14 2.5-7H21"/></svg></span>
         <div><b>Cadence</b><div class="tag" id="gymtag">Northshore Strength &amp; Co · membership retention</div></div>
       </div>
-      <div class="nav"><a href="/demo.html">Live recovery demo →</a></div>
+      <div class="nav"><a href="/proof.html">Model evidence →</a> <a href="/demo.html">Live recovery demo →</a></div>
     </div>
 
     <h1>Keep the members you already <span class="g">won</span>.</h1>
@@ -161,8 +161,9 @@
       document.getElementById('trust').innerHTML =
         `<span class="k"><span class="dot"></span><b>Silent by design</b></span>` +
         `<span class="k"><b>0</b> members contacted</span>` +
-        `<span class="k"><b>$0</b> dishonour fees charged</span>` +
-        `<span class="k">No negotiation · no hardship calls · no compliance surface</span>`;
+        `<span class="k">No collections call · no negotiation · <b>no dishonour fee</b></span>` +
+        `<span class="k"><b>0.91</b> ROC-AUC · <b>+8pts</b> vs payday heuristic</span>` +
+        `<span class="k">every recovered debit stays on <b>Pinch's rails</b></span>`;
 
       // prevention feed — the at-risk members, made visible
       const atRisk = d.rows.filter(r => r.band !== 'low');
@@ -188,8 +189,8 @@
       document.getElementById('roi').innerHTML =
         `<div><div class="big">${s.membersAtRisk} <span class="arrow">→</span> <span class="g">${s.membersKeptProjected} kept</span></div>` +
         `<div class="lab">members at risk of involuntary churn this run → silently retained (projected, at the model's held-out 46% recovery rate)</div></div>` +
-        `<div><div class="big g">${money(annual)}<span style="font-size:13px;color:var(--dim)"> / yr</span></div>` +
-        `<div class="lab">membership revenue that would otherwise leak to failed debits, annualised across 26 fortnightly runs</div></div>`;
+        `<div><div class="big g">~${money(annual)}<span style="font-size:13px;color:var(--dim)"> / yr modelled</span></div>` +
+        `<div class="lab">illustrative: this synthetic book's projected recovery annualised across 26 runs. A real figure needs a live back-test — see <a href="/proof.html" style="color:var(--blue)">model evidence</a>.</div></div>`;
 
       const lift = s.expectedWithAud - s.expectedWithoutAud;
       document.getElementById('forecast').innerHTML =
@@ -211,8 +212,8 @@
       document.getElementById('foot').innerHTML =
         `<b>Why silent wins.</b> Every other tool waits for the debit to fail, then messages the member to negotiate — ` +
         `which is the exact moment a member remembers they were thinking of quitting. Cadence never opens that conversation. ` +
-        `It re-times an <b>already-authorised</b> debit to the member's payday, so the payment simply succeeds. ` +
-        `No message, no fee, no negotiation, no hardship-comms compliance to carry — <b>and the member stays.</b>`;
+        `It re-times an <b>already-authorised</b> debit to the member's payday — a re-presentation under the existing mandate — so the payment simply succeeds. ` +
+        `No collections message, no dishonour fee, no negotiation — <b>and the member stays.</b>`;
 
       document.getElementById('note').textContent = d.generatedNote + ' Scores are live LightGBM output; recovered dollars are a projection at the model’s held-out recovery rate.';
     }).catch(e => { document.getElementById('lede').textContent = String(e); });

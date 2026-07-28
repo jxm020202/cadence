@@ -17,8 +17,9 @@ npm start                 # http://localhost:3000  → the recovery demo
 # PINCH_MODE=live npm start   # same demo, but driven by REAL sandbox calls (real pyr_/pmt_ ids)
 ```
 **A judge's 60-second tour:**
-- **`/` → the recovery demo** — predict → dishonour → *type Dana's reply* (`"cant do friday, monday works"`) → a **real recovery payment** with a real `applicationFee`, consent receipt in metadata. The API pane shows every call; the badge shows **LIVE** vs mock.
-- **`/merchant.html`** — the operator view: this fortnight's debit run **risk-ranked by the live model**, with projected recovered $.
+- **`/` → the recovery demo** — predict → dishonour → Cadence **silently re-times the retry to payday** (a re-presentation under the existing mandate, no member contact) → a **real recovery payment** with a real `applicationFee`. The API pane shows every call; the badge shows **LIVE** vs mock. (Consent is reserved for the account-closed / hardship edge case.)
+- **`/merchant.html`** — the gym operator's retention cockpit: this fortnight's debit run **risk-ranked by the live model**, silent saves, projected recovered $.
+- **`/proof.html`** — the model teardown: 0.913 held-out AUC, the ablation that collapses to 0.50 when the signal is deleted (no leak), the recovery ladder, and calibration — the evidence it's a real trained model, not a prompt.
 - **What's real vs simulated (honesty contract):** payer, source, payment, recovery + `applicationFee` are **real sandbox calls**. The only thing labelled **SIMULATED** is the dishonour→settle *transition* — the sandbox batch won't process a scheduled BECS debit on demand (proven in `scripts/spike*.ts`; processed-list stays 0). We label it rather than fake it.
 - **Tests:** `npm test` — incl. the end-to-end `bank-results → gate → LightGBM → recovery` loop and the webhook signature verify. ML: `cd ml && uv run scripts/run_experiment.py`.
 

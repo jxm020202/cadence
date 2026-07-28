@@ -198,9 +198,9 @@ export async function handleBankResults(
         amount: Math.round(ctx.amount * 100),
         transactionDate: retryDate.toISOString().slice(0, 10),
         description: 'Cadence recovery (model-timed)',
-        // consent receipt (predict-then-ask) + Cadence's cut as a native fee,
-        // both reconciled/auditable on Pinch's own rails
-        metadata: `model-timed day+${plan.bestRetryDay}; consent: pending payer reply`,
+        // silent re-time (re-presentation under the existing mandate) + Cadence's
+        // cut as a native fee, both reconciled/auditable on Pinch's own rails
+        metadata: `silent re-time to payday (model day+${plan.bestRetryDay}); re-presentation under existing mandate — no member contact`,
         applicationFee: Math.round(ctx.amount * 100 * CADENCE_FEE_RATE),
       };
       result.actedWith = body;

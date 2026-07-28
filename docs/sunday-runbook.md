@@ -10,23 +10,16 @@
 - **4:00–4:30** — upload to YouTube as **Unlisted** (NOT Private), paste link into the form, submit.
 - **By 5:00 PM** — **submitted.** Rest of the day free.
 
-## The 60-second script (~130 words)
-> Every fortnight, millions of Australian gym debits bounce — usually just insufficient funds, days before payday. The incumbent answer is a thirty-dollar fee and a blind retry. Cadence is different.
-> *(screen: the demo)* Our model scores each scheduled debit's dishonour risk, live. When one fails, Cadence texts the member and asks when suits — I'll type her reply: "can't do Friday, Monday works." A deterministic parser reads it and schedules the recovery through Pinch's own API — a real payment, real ID, our fee as a Pinch applicationFee, her consent in the metadata.
-> *(screen: merchant view)* And the operator's view: this fortnight's run, every debit risk-scored, recovered dollars projected.
-> Real model, real Pinch integration, built this weekend. **Cadence — a bounced debit becomes a recovered dollar.**
+## The 60-second script — PURE SILENT (canonical; reusable as the final's demo cut)
+Every number verified against `ml/outputs/metrics.json`. No typing, no "when suits", no consent SMS.
+> *(0–10s — title / face)* Every fortnight, millions of Australian direct debits bounce — and most aren't people who can't pay; they're short for a few days, right before payday. The old billers retry blind, add a thirty-dollar fee, and ping the member "payment failed" — which is how you lose members who never meant to leave.
+> *(10–30s — demo.html, LIVE badge, drag the risk sweep, Auto-play → red DISHONOURED)* Our model — a hundred-and-twelve-thousand debits, point-nine-one AUC on held-out payers — flags this one as likely to bounce before payday. It bounces. And Cadence **silently re-times the retry to her payday**: no message, no fee — a re-presentation on her existing mandate, so it just runs.
+> *(30–48s — API pane: real `pmt_` id, applicationFee 675, then SETTLED $45)* One honest line: every call here is a live Pinch sandbox call; only the bank settlement is simulated. Payday, it clears — **$45 recovered on Pinch's own rails**, our 15% as a native applicationFee: **volume Pinch keeps instead of losing**. She never knew it failed, so she stays.
+> *(48–60s — /merchant.html, the risk-ranked book)* Zero members contacted, **eight points over the payday heuristic** on held-out data. Recover quietly, keep the member, grow the rail — that's Cadence.
 
-## The 60-second script (SILENT recovery — the clean story)
-> Every fortnight, millions of Australian gym debits bounce — usually just insufficient funds, a few days
-> before payday. The member isn't broke; they're short for three days. The old billers retry blindly,
-> charge a $30 fee, and ping the member "your payment failed" — which is how gyms lose members who never
-> meant to leave.
-> *(demo)* Cadence is different. Our model scores every scheduled debit — this one, likely to bounce, lands
-> before her payday. It bounces. And Cadence **silently re-times the retry to her payday** — no message, no
-> fee. On payday it clears: **$45 recovered, through Pinch's own API**, our 15% as an applicationFee — and
-> **she never knew it failed, so she stays.**
-> *(merchant view)* Across the whole book: every debit risk-scored, recovered dollars projected.
-> Real model, real Pinch integration. **Cadence — recover the payment quietly, and keep the member.**
+**Compliance one-liner (Q&A only):** "silent" = no collections outreach, no negotiation, no fee — a re-presentation under the existing mandate; standard DDR notice for any out-of-window date change is retained, not bypassed. The account-closed / hardship edge (gate refuses → one-way update link) is the ONLY time we contact the member — hold it for Q&A as "knowing when NOT to retry".
+
+**Evidence to have open:** `/proof.html` (the model teardown — ablation collapse, recovery ladder, calibration) for any judge who wants to see the ML is real, not a wrapper.
 
 ## Shot list (what's on screen while you talk)
 1. **0–10s** — face or title card: the problem line.

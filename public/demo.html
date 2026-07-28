@@ -71,6 +71,7 @@
   <header>
     <h1>Cadence</h1>
     <span class="mode" id="mode">sandbox mock — payload-exact</span>
+    <a href="/proof.html" style="margin-left:auto;color:var(--dim);text-decoration:none;font-size:13px;border:1px solid var(--line);padding:5px 11px;border-radius:8px">Model evidence →</a>
   </header>
   <div class="sub">One debit. Re-timed to payday. Same rails, same authority — better timing.</div>
 
@@ -87,16 +88,16 @@
       <div class="narration" id="narration"></div>
       <div class="timeline" id="timeline"></div>
       <div class="chatbox" id="chatbox">
-        <h4>Dana’s phone — type as Dana 📱</h4>
+        <h4>Edge case — account closed (one-way notice)</h4>
         <div id="chatlog"></div>
         <div class="chatrow" id="chatrow">
-          <input id="chatinput" placeholder='try: "cant do friday, monday works" — or "OK"' />
+          <input id="chatinput" placeholder='account-closed edge case — a secure update link is sent, never a negotiation' />
           <button id="chatsend">Send</button>
         </div>
       </div>
       <div class="feesplit" id="feesplit"></div>
       <div class="sweep" id="sweep" style="display:none">
-        <div class="sweep-head">Drag the debit — every date has a price <span class="sweep-tag">live model</span></div>
+        <div class="sweep-head">Drag the debit — every date has a price <span class="sweep-tag">live model · 0.91 AUC on 112,890 held-out debits</span></div>
         <svg id="sweepSvg" viewBox="0 0 440 90" width="100%" height="90"></svg>
         <input type="range" id="sweepSlider" min="-7" max="14" value="0" step="1" style="width:100%" />
         <div class="sweep-read" id="sweepRead"></div>
@@ -115,7 +116,7 @@
 
 <script>
   const LABELS = {
-    nsf: ['Run to bank date ▸', 'Cadence plans + asks ▸', 'Time-travel to the chosen day ▸', 'Done — $45 recovered'],
+    nsf: ['Run to bank date ▸', 'Cadence silently re-times to payday ▸', 'Time-travel to payday ▸', 'Done — $45 recovered, silently'],
     closed: ['Run to bank date ▸', 'Gate rules ▸', 'Next cycle ▸', 'Done — method fixed, nothing forced'],
   };
   const nextBtn = document.getElementById('next');
@@ -149,7 +150,7 @@
       tl.appendChild(div);
     }
 
-    // the phone: consent conversation (type as Dana)
+    // the phone: account-closed edge case only — a one-way "update your method" notice, never a negotiation
     const box = document.getElementById('chatbox');
     const log = document.getElementById('chatlog');
     if (s.chat && s.chat.length) {
@@ -162,7 +163,7 @@
     const fs = document.getElementById('feesplit');
     if (s.feeSplit) {
       fs.style.display = 'block';
-      fs.innerHTML = `transfer reconciles: recovered <b>${money(s.feeSplit.recovered)}</b> · Cadence applicationFee ${money(s.feeSplit.cadenceFee)} · net to gym <b>${money(s.feeSplit.netToMerchant)}</b>`;
+      fs.innerHTML = `transfer reconciles: recovered <b>${money(s.feeSplit.recovered)}</b> · Cadence applicationFee ${money(s.feeSplit.cadenceFee)} · net to gym <b>${money(s.feeSplit.netToMerchant)}</b><br><span style="color:var(--dim)">↳ ${money(s.feeSplit.recovered)} of BECS volume Pinch keeps instead of losing</span>`;
     } else fs.style.display = 'none';
 
     // animate the counter on settle
